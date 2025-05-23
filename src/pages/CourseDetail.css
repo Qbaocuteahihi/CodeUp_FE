@@ -225,3 +225,26 @@
   text-align: center;
   font-size: 1.1rem;
 }
+.review-item {
+  border-top: 1px solid #ddd;
+  padding: 10px 0;
+}
+
+.review-user {
+  font-weight: bold;
+}
+
+.review-rating .star {
+  color: #ffc107;
+  font-size: 20px;
+  margin-right: 4px;
+}
+
+.star.filled {
+  color: #ffc107;
+}
+
+.star.half {
+  color: #ffc107;
+  opacity: 0.5;
+}

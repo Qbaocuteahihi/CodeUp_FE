@@ -1,0 +1,21 @@
+.rating-form {
+  user-select: none;
+  margin-top: 20px;
+}
+
+.rating-form .star {
+  font-size: 32px;
+  color: #ccc;
+  cursor: pointer;
+  transition: color 0.3s;
+  margin-right: 5px;
+}
+
+.rating-form .star.selected {
+  color: #ffc107;
+}
+
+.rating-form .star.disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
