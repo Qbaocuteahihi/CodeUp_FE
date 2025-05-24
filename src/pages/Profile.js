@@ -79,7 +79,7 @@ const Profile = ({ user, onUpdate }) => {
   };
 
   if (!user) {
-    return <div className="profile-message">Vui lòng đăng nhập để xem hồ sơ của bạn.</div>;
+    return <div className="profile-container"><div className="profile-message">Vui lòng đăng nhập để xem hồ sơ của bạn.</div></div>;
   }
 
   return (
@@ -87,17 +87,11 @@ const Profile = ({ user, onUpdate }) => {
       <div className="profile-header">
         <h2>Thông tin Hồ Sơ</h2>
         {!isEditing ? (
-          <button 
-            className="edit-button"
-            onClick={() => setIsEditing(true)}
-          >
+          <button className="edit-button" onClick={() => setIsEditing(true)}>
             Chỉnh sửa
           </button>
         ) : (
-          <button 
-            className="cancel-button"
-            onClick={() => setIsEditing(false)}
-          >
+          <button className="cancel-button" onClick={() => setIsEditing(false)}>
             Hủy
           </button>
         )}
@@ -143,7 +137,6 @@ const Profile = ({ user, onUpdate }) => {
               id="email"
               name="email"
               value={formData.email}
-              onChange={handleInputChange}
               disabled
             />
           </div>

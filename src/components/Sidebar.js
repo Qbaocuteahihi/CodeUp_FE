@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { FaHome, FaStream, FaBook, FaChevronLeft, FaChevronRight, FaPlusCircle, FaStar } from "react-icons/fa";
+import {
+  FaHome,
+  FaStream,
+  FaBook,
+  FaChevronLeft,
+  FaChevronRight,
+  FaPlusCircle,
+  FaStar,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 
@@ -32,14 +40,15 @@ const Sidebar = () => {
       case "roadmap":
         navigate("/roadmap");
         break;
-      case "courses":
-        navigate("/courses");
-        break;
+      
       case "addcourse":
         navigate("/addcourse");
         break;
       case "favorites":
         navigate("/favorites");
+        break;
+      case "courses":
+        navigate("/my-courses");
         break;
       default:
         break;
@@ -93,7 +102,9 @@ const Sidebar = () => {
         </div>
         {user && (user.role === "instructor" || user.role === "admin") && (
           <div
-            className={`menu-item ${activeItem === "addcourse" ? "active" : ""}`}
+            className={`menu-item ${
+              activeItem === "addcourse" ? "active" : ""
+            }`}
             onClick={() => handleItemClick("addcourse")}
           >
             <FaPlusCircle className="icon" />
