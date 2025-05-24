@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  FaHome,
-  FaStream,
-  FaBook,
-  FaChevronLeft,
-  FaChevronRight,
-  FaPlusCircle,
-  FaUserShield,
-} from "react-icons/fa";
+import { FaHome, FaStream, FaBook, FaChevronLeft, FaChevronRight, FaPlusCircle, FaStar } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 
@@ -46,8 +38,8 @@ const Sidebar = () => {
       case "addcourse":
         navigate("/addcourse");
         break;
-      case "admin":
-        navigate("/admin/dashboard");
+      case "favorites":
+        navigate("/favorites");
         break;
       default:
         break;
@@ -85,7 +77,6 @@ const Sidebar = () => {
           <FaHome className="icon" />
           {!collapsed && <span>Trang chủ</span>}
         </div>
-
         <div
           className={`menu-item ${activeItem === "roadmap" ? "active" : ""}`}
           onClick={() => handleItemClick("roadmap")}
@@ -93,7 +84,6 @@ const Sidebar = () => {
           <FaStream className="icon" />
           {!collapsed && <span>Lộ trình</span>}
         </div>
-
         <div
           className={`menu-item ${activeItem === "courses" ? "active" : ""}`}
           onClick={() => handleItemClick("courses")}
@@ -101,8 +91,7 @@ const Sidebar = () => {
           <FaBook className="icon" />
           {!collapsed && <span>Khóa học đã đăng kí</span>}
         </div>
-
-        {(user?.role === "instructor" || user?.role === "admin") && (
+        {user && (user.role === "instructor" || user.role === "admin") && (
           <div
             className={`menu-item ${activeItem === "addcourse" ? "active" : ""}`}
             onClick={() => handleItemClick("addcourse")}
@@ -111,17 +100,13 @@ const Sidebar = () => {
             {!collapsed && <span>Thêm Khóa Học</span>}
           </div>
         )}
-
-        {/* Nút Trang Admin - chỉ hiển thị với admin */}
-        {user?.role === "admin" && (
-          <div
-            className={`menu-item ${activeItem === "admin" ? "active" : ""}`}
-            onClick={() => handleItemClick("admin")}
-          >
-            <FaUserShield className="icon" />
-            {!collapsed && <span>Trang Admin</span>}
-          </div>
-        )}
+        <div
+          className={`menu-item ${activeItem === "favorites" ? "active" : ""}`}
+          onClick={() => handleItemClick("favorites")}
+        >
+          <FaStar className="icon" />
+          {!collapsed && <span>Danh sách yêu thích</span>}
+        </div>
       </div>
     </div>
   );
