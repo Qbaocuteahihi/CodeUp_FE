@@ -18,6 +18,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./App.css";
 import MyCourses from "./pages/MyCourses"; 
+import InstructorDashboard from "./pages/InstructorDashboard";
 
 function AppLayout({ user, onLogout, children }) {
   return (
@@ -83,6 +84,7 @@ function App() {
             </AppLayout>
           }
         />
+        <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
         <Route
           path="*"
           element={
