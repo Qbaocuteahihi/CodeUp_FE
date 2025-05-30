@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import RatingForm from "../components/RatingForm"; // Import form đánh giá
+import RatingForm from "../components/RatingForm";
 import "./CourseDetail.css";
 
 const CourseDetail = () => {
@@ -44,10 +44,11 @@ const CourseDetail = () => {
     fetchCourse();
   }, [id]);
 
-  if (loading) return <div>Đang tải...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (error) return <div className="error-message">{error}</div>;
   if (!course) return <div>Không tìm thấy khóa học.</div>;
 
+  // Hàm lấy URL nhúng YouTube từ URL thông thường
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
     const regExp = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/;
@@ -55,6 +56,7 @@ const CourseDetail = () => {
     return match ? `https://www.youtube.com/embed/${match[1]}` : null;
   };
 
+  // Hàm hiển thị sao đánh giá
   const renderStars = (rating) => {
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating - fullStars >= 0.5;
@@ -78,6 +80,43 @@ const CourseDetail = () => {
     );
   };
 
+  // Hàm hiển thị nội dung bài học theo từng bước
+  const renderLessonContent = (content) => {
+    if (!content) return null;
+    
+    // Tách nội dung thành các phần dựa trên các marker
+    const steps = content.split(/\n(?=Bước \d+:|👉|💡|📝|```)/);
+    
+    return steps.map((step, index) => {
+      const isStep = step.startsWith("Bước");
+      const isTip = step.startsWith("👉");
+      const isImportant = step.startsWith("💡");
+      const isNote = step.startsWith("📝");
+      const isCode = step.startsWith("```");
+      
+      // Xử lý code block
+      if (isCode) {
+        const codeContent = step.replace(/```/g, "").trim();
+        return (
+          <div key={index} className="code-step">
+            <pre>
+              <code>{codeContent}</code>
+            </pre>
+          </div>
+        );
+      }
+      
+      return (
+        <div 
+          key={index}
+          className={`step ${isStep ? "step-item" : ""} ${isTip ? "tip-step" : ""} ${isImportant ? "important-step" : ""} ${isNote ? "note-step" : ""}`}
+        >
+          {step}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="course-detail-container">
       <button className="back-button" onClick={() => navigate("/")}>
@@ -98,54 +137,19 @@ const CourseDetail = () => {
         </div>
       </div>
 
-      <div className="section">
-        <h2>Giới thiệu khóa học</h2>
-        <p>{course.details?.content}</p>
-      </div>
-
-      <div className="section">
-        <h2>Đề cương khóa học</h2>
-        <ul className="syllabus-list">
-          {course.details?.syllabus?.map((item, idx) => (
-            <li key={idx}>{item}</li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="section">
-        <h2>Video hướng dẫn</h2>
-        <div className="video-grid">
-          {course.details?.video?.map((url, idx) => {
-            const embedUrl = getYouTubeEmbedUrl(url);
-            return embedUrl ? (
-              <div className="video-container" key={idx}>
-                <iframe
-                  src={embedUrl}
-                  title={`Video hướng dẫn ${idx + 1}`}
-                  allowFullScreen
-                ></iframe>
-              </div>
-            ) : (
-              <a key={idx} href={url} target="_blank" rel="noreferrer">
-                {url}
-              </a>
-            );
-          })}
-        </div>
-      </div>
-
+      {/* Tabs */}
       <div className="tabs">
-        <button
-          className={`tab-button ${activeTab === "overview" ? "active" : ""}`}
-          onClick={() => setActiveTab("overview")}
-        >
-          Tổng quan
-        </button>
         <button
           className={`tab-button ${activeTab === "content" ? "active" : ""}`}
           onClick={() => setActiveTab("content")}
         >
           Nội dung
+        </button>
+        <button
+          className={`tab-button ${activeTab === "overview" ? "active" : ""}`}
+          onClick={() => setActiveTab("overview")}
+        >
+          Tổng quan
         </button>
         <button
           className={`tab-button ${activeTab === "instructor" ? "active" : ""}`}
@@ -162,38 +166,88 @@ const CourseDetail = () => {
       </div>
 
       <div className="tab-content">
-        {activeTab === "overview" && (
-          <div className="section">
-            <div className="overview-description">{course.description}</div>
-            <div className="learning-outcomes">
-              <h3>Bạn sẽ học được:</h3>
-              {course.learningOutcomes?.map((item, i) => (
-                <div className="outcome-item" key={i}>
-                  ✓ {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* Tab Nội dung: tách chương - bài học - video trong bài học */}
         {activeTab === "content" && (
           <div className="section">
-            {course.curriculum?.map((chapter, i) => (
-              <div className="curriculum-chapter" key={i}>
-                <h3 className="chapter-title">
-                  Chương {i + 1}: {chapter.title}
+            {course.details?.chapters?.map((chapter, idxChapter) => (
+              <div className="chapter-block" key={idxChapter}>
+                <h3>
+                  Chương {idxChapter + 1}: {chapter.title}
                 </h3>
-                {chapter.lessons?.map((lesson, j) => (
-                  <div className="lesson-item" key={j}>
-                    {lesson.title}{" "}
-                    <span className="lesson-duration">({lesson.duration})</span>
-                  </div>
-                ))}
+                <p>{chapter.description}</p>
+
+                <div className="lessons-list">
+                  {chapter.lessons?.map((lesson, idxLesson) => {
+                    const embedUrl = getYouTubeEmbedUrl(lesson.videoUrl);
+                    return (
+                      <div className="lesson-item" key={idxLesson}>
+                        <h4>{lesson.title}</h4>
+                        
+                        {/* Hiển thị nội dung bài học theo từng bước */}
+                        {lesson.content && (
+                          <div className="lesson-steps">
+                            {renderLessonContent(lesson.content)}
+                          </div>
+                        )}
+
+                        {/* Video chỉ hiện trong bài học có videoUrl */}
+                        {lesson.videoUrl && (
+                          <div className="lesson-video">
+                            {embedUrl ? (
+                              <iframe
+                                width="560"
+                                height="315"
+                                src={embedUrl}
+                                title={`Video bài học: ${lesson.title}`}
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              ></iframe>
+                            ) : (
+                              <a
+                                href={lesson.videoUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Xem video
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>
         )}
 
+        {/* Tab Tổng quan */}
+        {activeTab === "overview" && (
+          <div className="section">
+            <h2>Giới thiệu khóa học</h2>
+            <p>{course.description || course.details?.content}</p>
+
+            {course.details?.syllabus && (
+              <>
+                <h3>Đề cương khóa học</h3>
+                <ul>
+                  {course.details.syllabus.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <div className="course-meta">
+              <div>Loại khóa học: {course.details?.type || "N/A"}</div>
+              <div>Thời lượng: {course.details?.duration || course.duration}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Giảng viên */}
         {activeTab === "instructor" && course.instructor && (
           <div className="section instructor-section">
             <img
@@ -203,37 +257,27 @@ const CourseDetail = () => {
             />
             <div>
               <h2>{course.instructor.name}</h2>
-              <div className="instructor-title">{course.instructor.title}</div>
-              <p className="instructor-bio">{course.instructor.bio}</p>
+              <p>{course.instructor.bio}</p>
             </div>
           </div>
         )}
 
+        {/* Tab Đánh giá */}
         {activeTab === "reviews" && (
-          <div className="section">
+          <div className="section reviews-section">
             {course.reviews?.length > 0 ? (
-              course.reviews.map((review, i) => (
-                <div className="review-item" key={i}>
-                  <div className="review-user">{review.user}</div>
-                  <div className="review-rating">
-                    {Array.from({ length: 5 }, (_, index) => (
-                      <span
-                        key={index}
-                        className={`star ${
-                          index < review.rating ? "filled" : ""
-                        }`}
-                      >
-                        ★
-                      </span>
-                    ))}
-                  </div>
+              course.reviews.map((review, idx) => (
+                <div className="review-item" key={idx}>
+                  <div className="review-author">{review.userName}</div>
+                  <div className="review-rating">{renderStars(review.rating)}</div>
                   <div className="review-comment">{review.comment}</div>
                 </div>
               ))
             ) : (
-              <div className="no-reviews">Chưa có đánh giá nào.</div>
+              <p>Chưa có đánh giá nào.</p>
             )}
-            <RatingForm courseId={course._id} onSubmitted={fetchCourse} />
+
+            <RatingForm courseId={id} onReviewSubmitted={fetchCourse} />
           </div>
         )}
       </div>
