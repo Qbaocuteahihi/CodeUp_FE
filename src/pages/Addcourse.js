@@ -1,36 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./AddCourse.css";
 import { useNavigate } from "react-router-dom";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 const AddCourse = () => {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "",
-    level: "",
-    price: "",
-    duration: "",
-    instructor: "",
-    imageUrl: "",
-    details: {
-      type: "",
-      chapters: [
-        {
+  const [formData, setFormData] = useState(() => {
+    const savedData = localStorage.getItem("addCourseFormData");
+    return savedData
+      ? JSON.parse(savedData)
+      : {
           title: "",
           description: "",
-          lessons: [
-            {
-              title: "",
-              content: "",
-              videoUrl: "",
-            },
-          ],
-        },
-      ],
-    },
-    quiz: [],
-    
+          category: "",
+          level: "",
+          price: "",
+          duration: "",
+          instructor: "",
+          imageUrl: "",
+          details: {
+            type: "",
+            chapters: [
+              {
+                title: "",
+                description: "",
+                lessons: [
+                  {
+                    title: "",
+                    content: "",
+                    videoUrl: "",
+                  },
+                ],
+              },
+            ],
+          },
+          quiz: [],
+        };
   });
 
   const [loading, setLoading] = useState(false);
@@ -38,10 +43,15 @@ const AddCourse = () => {
   const [success, setSuccess] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
   const [expandedChapters, setExpandedChapters] = useState(
-    formData.details.chapters.map(() => true)
+    formData.details.chapters.map((_, i, arr) => i === arr.length - 1)
   );
   const [expandedQuiz, setExpandedQuiz] = useState([]);
   const navigate = useNavigate();
+
+  // AUTO-SAVE TO LOCALSTORAGE
+  useEffect(() => {
+    localStorage.setItem("addCourseFormData", JSON.stringify(formData));
+  }, [formData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,21 +97,18 @@ const AddCourse = () => {
   };
 
   const addChapter = () => {
+    const newChapter = {
+      title: "",
+      description: "",
+      lessons: [{ title: "", content: "", videoUrl: "" }],
+    };
+    const newChapters = [...formData.details.chapters, newChapter];
     setFormData((prev) => ({
       ...prev,
-      details: {
-        ...prev.details,
-        chapters: [
-          ...prev.details.chapters,
-          {
-            title: "",
-            description: "",
-            lessons: [{ title: "", content: "", videoUrl: "" }],
-          },
-        ],
-      },
+      details: { ...prev.details, chapters: newChapters },
     }));
-    setExpandedChapters([...expandedChapters, true]);
+
+    setExpandedChapters(newChapters.map((_, i) => i === newChapters.length - 1));
   };
 
   const addLesson = (chapterIndex) => {
@@ -157,11 +164,27 @@ const AddCourse = () => {
   };
 
   const toggleChapter = (index) => {
-    const newExpanded = [...expandedChapters];
-    newExpanded[index] = !newExpanded[index];
-    setExpandedChapters(newExpanded);
+    if (index === formData.details.chapters.length - 1) {
+      setExpandedChapters((prev) => prev.map((_, i) => i === index));
+    }
   };
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
 
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+
+    const reorderedChapters = Array.from(formData.details.chapters);
+    const [removed] = reorderedChapters.splice(sourceIndex, 1);
+    reorderedChapters.splice(destIndex, 0, removed);
+
+    setFormData((prev) => ({
+      ...prev,
+      details: { ...prev.details, chapters: reorderedChapters },
+    }));
+
+    setExpandedChapters(reorderedChapters.map((_, i) => i === reorderedChapters.length - 1));
+  };
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -197,7 +220,7 @@ const AddCourse = () => {
         ...prev.quiz,
         {
           question: "",
-          options: ["", ""], // Bắt đầu với ít nhất 2 lựa chọn
+          options: ["", ""],
           correctAnswerIndex: 0,
         },
       ],
@@ -268,12 +291,10 @@ const AddCourse = () => {
     }
     newQuiz[qIndex].options.splice(optIndex, 1);
 
-    // Cập nhật chỉ số đáp án đúng nếu cần
     if (newQuiz[qIndex].correctAnswerIndex === optIndex) {
       newQuiz[qIndex].correctAnswerIndex = 0;
     } else if (newQuiz[qIndex].correctAnswerIndex > optIndex) {
-      newQuiz[qIndex].correctAnswerIndex =
-        newQuiz[qIndex].correctAnswerIndex - 1;
+      newQuiz[qIndex].correctAnswerIndex = newQuiz[qIndex].correctAnswerIndex - 1;
     }
 
     setFormData((prev) => ({
@@ -288,111 +309,22 @@ const AddCourse = () => {
     setError("");
     setSuccess("");
 
-    const user = JSON.parse(localStorage.getItem("user"));
-    const token = localStorage.getItem("token");
-    const userId = user?.id;
-
-    if (!userId || !token) {
-      setError("Thiếu thông tin xác thực. Vui lòng đăng nhập lại.");
-      setLoading(false);
-      return;
-    }
-
-    const {
-      title,
-      description,
-      category,
-      level,
-      price,
-      duration,
-      imageUrl,
-      details,
-      quiz,
-      
-    } = formData;
-
-    if (
-      !title ||
-      !description ||
-      !category ||
-      !level ||
-      !price ||
-      !duration ||
-      !imageUrl ||
-      !details.type
-    ) {
-      setError("Vui lòng điền đầy đủ thông tin.");
-      setLoading(false);
-      return;
-    }
-
-    // Validate chương và bài học
-    for (let chapter of details.chapters) {
-      if (!chapter.title || chapter.lessons.length === 0) {
-        setError("Vui lòng điền đầy đủ thông tin cho mỗi chương và bài học.");
-        setLoading(false);
-        return;
-      }
-      for (let lesson of chapter.lessons) {
-        if (!lesson.title) {
-          setError("Mỗi bài học cần có tiêu đề.");
-          setLoading(false);
-          return;
-        }
-      }
-    }
-
-    // Validate quiz
-    for (let i = 0; i < quiz.length; i++) {
-      const q = quiz[i];
-      if (!q.question.trim()) {
-        setError(`Câu hỏi thứ ${i + 1} không được để trống.`);
-        setLoading(false);
-        return;
-      }
-      if (q.options.length < 2) {
-        setError(`Câu hỏi thứ ${i + 1} cần ít nhất 2 lựa chọn.`);
-        setLoading(false);
-        return;
-      }
-      for (let j = 0; j < q.options.length; j++) {
-        if (!q.options[j].trim()) {
-          setError(
-            `Lựa chọn ${j + 1} của câu hỏi ${i + 1} không được để trống.`
-          );
-          setLoading(false);
-          return;
-        }
-      }
-      if (
-        q.correctAnswerIndex < 0 ||
-        q.correctAnswerIndex >= q.options.length
-      ) {
-        setError(`Câu hỏi thứ ${i + 1} có đáp án đúng không hợp lệ.`);
-        setLoading(false);
-        return;
-      }
-    }
+    // TODO: Validate formData before submit here (optional)
 
     try {
-      // CHUẨN BỊ DỮ LIỆU CHÍNH XÁC ĐỂ GỬI
+      const token = localStorage.getItem("token");
       const courseData = {
-        title,
-        description,
-        category,
-        level,
-        price,
-        duration,
-        instructor: userId,
-        imageUrl,
-        // ĐƯA QUIZ VÀO TRONG DETAILS - GIỮ NGUYÊN correctAnswerIndex
+        ...formData,
         details: {
-          ...details,
-          quiz: quiz, // Gửi nguyên quiz với correctAnswerIndex
+          ...formData.details,
+          chapters: formData.details.chapters.map((chapter) => ({
+            ...chapter,
+            lessons: chapter.lessons.filter(
+              (lesson) => lesson.title.trim() !== ""
+            ),
+          })),
         },
       };
-
-      console.log("Sending course data:", courseData); // Debug log
 
       const res = await axios.post(
         "http://localhost:5000/api/courses",
@@ -406,7 +338,8 @@ const AddCourse = () => {
       );
 
       if (res.status === 201) {
-        setSuccess("Thêm khóa học thành công!");
+        localStorage.removeItem("addCourseFormData"); // XÓA dữ liệu localStorage khi gửi thành công
+        setSuccess("Tạo khoá học thành công!");
         setFormData({
           title: "",
           description: "",
@@ -422,25 +355,25 @@ const AddCourse = () => {
               {
                 title: "",
                 description: "",
-                lessons: [{ title: "", content: "", videoUrl: "" }],
+                lessons: [
+                  {
+                    title: "",
+                    content: "",
+                    videoUrl: "",
+                  },
+                ],
               },
             ],
           },
           quiz: [],
         });
-        setPreviewImage(null);
-        setExpandedChapters([true]);
-        setExpandedQuiz([]);
-        setTimeout(() => navigate("/dashboard"), 1500);
+        navigate("/courses"); // Hoặc trang bạn muốn chuyển đến sau khi tạo
       } else {
-        setError("Thêm khóa học thất bại.");
+        setError("Tạo khoá học thất bại. Vui lòng thử lại.");
       }
     } catch (err) {
-      console.error("API error:", err.response?.data || err.message);
-      setError(
-        "Đã xảy ra lỗi khi thêm khóa học: " +
-          (err.response?.data?.message || err.message)
-      );
+      setError("Lỗi khi tạo khoá học.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -602,149 +535,215 @@ const AddCourse = () => {
             <button
               type="button"
               className="add-chapter-btn"
-              onClick={addChapter}
+              onClick={() => {
+                addChapter();
+                setExpandedChapters(
+                  formData.details.chapters.map(() => false).concat([true])
+                );
+              }}
             >
               + Thêm chương
             </button>
           </div>
 
-          {formData.details.chapters.map((chapter, cIdx) => (
-            <div key={cIdx} className="syllabus-item">
-              <div
-                className={`syllabus-item-header ${
-                  expandedChapters[cIdx] ? "expanded" : ""
-                }`}
-                onClick={() => toggleChapter(cIdx)}
-              >
-                <div className="chapter-title">
-                  <span className="chapter-number">Chương {cIdx + 1}:</span>
-                  <span>{chapter.title || `Chương chưa có tiêu đề`}</span>
+          <DragDropContext
+            onDragEnd={(result) => {
+              if (!result.destination) return;
+
+              const newChapters = Array.from(formData.details.chapters);
+              const [movedChapter] = newChapters.splice(result.source.index, 1);
+              newChapters.splice(result.destination.index, 0, movedChapter);
+
+              setFormData((prev) => ({
+                ...prev,
+                details: {
+                  ...prev.details,
+                  chapters: newChapters,
+                },
+              }));
+
+              const newExpanded = newChapters.map(() => false);
+              newExpanded[result.destination.index] = true;
+              setExpandedChapters(newExpanded);
+            }}
+          >
+            <Droppable droppableId="chapters-droppable">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {formData.details.chapters.map((chapter, cIdx) => (
+                    <Draggable
+                      key={`chapter-${cIdx}`}
+                      draggableId={`chapter-${cIdx}`}
+                      index={cIdx}
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className="syllabus-item"
+                        >
+                          <div
+                            className={`syllabus-item-header ${
+                              expandedChapters[cIdx] ? "expanded" : ""
+                            }`}
+                            onClick={() => {
+                              const newExpanded = formData.details.chapters.map(
+                                () => false
+                              );
+                              newExpanded[cIdx] = true;
+                              setExpandedChapters(newExpanded);
+                            }}
+                          >
+                            <div className="chapter-title">
+                              <span className="chapter-number">
+                                Chương {cIdx + 1}:
+                              </span>
+                              <span>
+                                {chapter.title || `Chương chưa có tiêu đề`}
+                              </span>
+                            </div>
+                            <span className="arrow">▼</span>
+                          </div>
+                          <div
+                            className={`syllabus-item-content ${
+                              expandedChapters[cIdx] ? "expanded" : ""
+                            }`}
+                          >
+                            <div className="form-group">
+                              <label>
+                                Tên chương <span className="required">*</span>
+                              </label>
+                              <input
+                                placeholder="Nhập tên chương"
+                                value={chapter.title}
+                                onChange={(e) =>
+                                  handleChapterChange(
+                                    cIdx,
+                                    "title",
+                                    e.target.value
+                                  )
+                                }
+                                required
+                              />
+                            </div>
+
+                            <div className="form-group">
+                              <label>Mô tả chương</label>
+                              <textarea
+                                placeholder="Mô tả nội dung chương học..."
+                                value={chapter.description}
+                                onChange={(e) =>
+                                  handleChapterChange(
+                                    cIdx,
+                                    "description",
+                                    e.target.value
+                                  )
+                                }
+                                rows={3}
+                              />
+                            </div>
+
+                            {chapter.lessons.map((lesson, lIdx) => (
+                              <div key={lIdx} className="lesson-block">
+                                <div className="lesson-header">
+                                  <div className="lesson-number">
+                                    Bài {lIdx + 1}
+                                  </div>
+                                  <div className="lesson-actions">
+                                    <button
+                                      type="button"
+                                      className="add-lesson-btn"
+                                      onClick={() => addLesson(cIdx)}
+                                    >
+                                      + Thêm bài học
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="remove-btn"
+                                      onClick={() => removeLesson(cIdx, lIdx)}
+                                      disabled={chapter.lessons.length <= 1}
+                                    >
+                                      Xóa
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="form-group">
+                                  <label>
+                                    Tên bài học{" "}
+                                    <span className="required">*</span>
+                                  </label>
+                                  <input
+                                    placeholder="Nhập tên bài học"
+                                    value={lesson.title}
+                                    onChange={(e) =>
+                                      handleLessonChange(
+                                        cIdx,
+                                        lIdx,
+                                        "title",
+                                        e.target.value
+                                      )
+                                    }
+                                    required
+                                  />
+                                </div>
+
+                                <div className="form-group">
+                                  <label>Nội dung</label>
+                                  <textarea
+                                    placeholder="Nội dung chi tiết bài học..."
+                                    value={lesson.content}
+                                    onChange={(e) =>
+                                      handleLessonChange(
+                                        cIdx,
+                                        lIdx,
+                                        "content",
+                                        e.target.value
+                                      )
+                                    }
+                                    rows={3}
+                                  />
+                                </div>
+
+                                <div className="form-group">
+                                  <label>Video URL</label>
+                                  <input
+                                    placeholder="Đường dẫn video (nếu có)"
+                                    value={lesson.videoUrl}
+                                    onChange={(e) =>
+                                      handleLessonChange(
+                                        cIdx,
+                                        lIdx,
+                                        "videoUrl",
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            ))}
+
+                            <div className="chapter-footer">
+                              <button
+                                type="button"
+                                className="remove-btn"
+                                onClick={() => removeChapter(cIdx)}
+                                disabled={formData.details.chapters.length <= 1}
+                              >
+                                Xóa chương này
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
                 </div>
-                <span className="arrow">▼</span>
-              </div>
-              <div
-                className={`syllabus-item-content ${
-                  expandedChapters[cIdx] ? "expanded" : ""
-                }`}
-              >
-                <div className="form-group">
-                  <label>
-                    Tên chương <span className="required">*</span>
-                  </label>
-                  <input
-                    placeholder="Nhập tên chương"
-                    value={chapter.title}
-                    onChange={(e) =>
-                      handleChapterChange(cIdx, "title", e.target.value)
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Mô tả chương</label>
-                  <textarea
-                    placeholder="Mô tả nội dung chương học..."
-                    value={chapter.description}
-                    onChange={(e) =>
-                      handleChapterChange(cIdx, "description", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
-
-                <div className="lessons-header">
-                  <h4>Bài học</h4>
-                  <button
-                    type="button"
-                    className="add-lesson-btn"
-                    onClick={() => addLesson(cIdx)}
-                  >
-                    + Thêm bài học
-                  </button>
-                </div>
-
-                {chapter.lessons.map((lesson, lIdx) => (
-                  <div key={lIdx} className="lesson-block">
-                    <div className="lesson-header">
-                      <div className="lesson-number">Bài {lIdx + 1}</div>
-                      <button
-                        type="button"
-                        className="remove-btn"
-                        onClick={() => removeLesson(cIdx, lIdx)}
-                        disabled={chapter.lessons.length <= 1}
-                      >
-                        Xóa
-                      </button>
-                    </div>
-
-                    <div className="form-group">
-                      <label>
-                        Tên bài học <span className="required">*</span>
-                      </label>
-                      <input
-                        placeholder="Nhập tên bài học"
-                        value={lesson.title}
-                        onChange={(e) =>
-                          handleLessonChange(
-                            cIdx,
-                            lIdx,
-                            "title",
-                            e.target.value
-                          )
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Nội dung</label>
-                      <textarea
-                        placeholder="Nội dung chi tiết bài học..."
-                        value={lesson.content}
-                        onChange={(e) =>
-                          handleLessonChange(
-                            cIdx,
-                            lIdx,
-                            "content",
-                            e.target.value
-                          )
-                        }
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Video URL</label>
-                      <input
-                        placeholder="Đường dẫn video (nếu có)"
-                        value={lesson.videoUrl}
-                        onChange={(e) =>
-                          handleLessonChange(
-                            cIdx,
-                            lIdx,
-                            "videoUrl",
-                            e.target.value
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-                ))}
-
-                <div className="chapter-footer">
-                  <button
-                    type="button"
-                    className="remove-btn"
-                    onClick={() => removeChapter(cIdx)}
-                    disabled={formData.details.chapters.length <= 1}
-                  >
-                    Xóa chương này
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+              )}
+            </Droppable>
+          </DragDropContext>
         </div>
 
         {/* Phần Quiz */}
@@ -813,8 +812,6 @@ const AddCourse = () => {
 
                   {expandedQuiz[qIdx] && (
                     <div className="quiz-content">
-                      
-
                       <div className="form-group">
                         <label>
                           Nội dung câu hỏi <span className="required">*</span>

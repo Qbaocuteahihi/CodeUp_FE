@@ -1,0 +1,130 @@
+/* QuizViewer.css - dùng khi KHÔNG dùng Tailwind */
+
+.quiz-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.quiz-header {
+  background: linear-gradient(to right, #2563eb, #4f46e5);
+  padding: 1.5rem;
+  color: #fff;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.quiz-header h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.75rem;
+}
+
+.quiz-timer {
+  margin-top: 1rem;
+  background-color: rgba(30, 64, 175, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quiz-question {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.75rem;
+}
+
+.quiz-options {
+  margin-top: 1rem;
+}
+
+.quiz-option {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  background-color: #fff;
+  border: 2px solid #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.quiz-option:hover {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.quiz-option.correct {
+  background-color: #dcfce7;
+  border-color: #22c55e;
+}
+
+.quiz-option.incorrect {
+  background-color: #fee2e2;
+  border-color: #ef4444;
+}
+
+.quiz-explanation {
+  margin-top: 1rem;
+  background-color: #eff6ff;
+  border-left: 4px solid #3b82f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.quiz-footer {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.quiz-footer button {
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.quiz-footer .prev-btn {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.quiz-footer .next-btn {
+  background-color: #3b82f6;
+  color: #fff;
+}
+
+.quiz-footer .submit-btn {
+  background-color: #10b981;
+  color: white;
+}
+
+.quiz-footer .submit-btn:disabled {
+  background-color: #d1d5db;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
