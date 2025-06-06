@@ -1,443 +1,445 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./AddCourse.css";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-const AddCourse = () => {
-  const [formData, setFormData] = useState(() => {
-    const savedData = localStorage.getItem("addCourseFormData");
-    return savedData
-      ? JSON.parse(savedData)
-      : {
-          title: "",
-          description: "",
-          category: "",
-          level: "",
-          price: "",
-          duration: "",
-          instructor: "",
-          imageUrl: "",
-          details: {
-            type: "",
-            chapters: [
-              {
-                title: "",
-                description: "",
-                lessons: [
-                  {
-                    title: "",
-                    content: "",
-                    videoUrl: "",
-                  },
-                ],
-              },
-            ],
-            quiz: [],
-          },
-          // quiz: [],
-        };
+
+const EditCourse = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+
+  const [course, setCourse] = useState({
+    title: "",
+    description: "",
+    price: 0,
+    category: "",
+    level: "",
+    duration: "",
+    imageUrl: "",
+    details: {
+      type: "",
+      chapters: [],
+      quiz: [],
+    },
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [previewImage, setPreviewImage] = useState(null);
-  const [expandedChapters, setExpandedChapters] = useState(
-    formData.details.chapters.map((_, i, arr) => i === arr.length - 1)
-  );
+  const [previewImage, setPreviewImage] = useState("");
+  const [expandedChapters, setExpandedChapters] = useState([]);
   const [expandedQuiz, setExpandedQuiz] = useState([]);
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    localStorage.setItem("addCourseFormData", JSON.stringify(formData));
-  }, [formData]);
+    const fetchCourse = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/courses/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Chuẩn hóa dữ liệu để đảm bảo cấu trúc phù hợp
+        const courseData = res.data;
+        setCourse({
+          title: courseData.title || "",
+          description: courseData.description || "",
+          price: courseData.price || 0,
+          category: courseData.category || "",
+          level: courseData.level || "",
+          duration: courseData.duration || "",
+          imageUrl: courseData.imageUrl || "",
+          details: {
+            type: courseData.details?.type || "",
+            chapters: courseData.details?.chapters || [],
+            quiz: courseData.details?.quiz || [],
+          },
+        });
+
+        setPreviewImage(courseData.imageUrl || "");
+        setExpandedChapters(
+          Array(courseData.details?.chapters?.length || 0).fill(false)
+        );
+        setExpandedQuiz(
+          Array(courseData.details?.quiz?.length || 0).fill(false)
+        );
+
+        setError("");
+      } catch (err) {
+        if (err.response?.status === 401) {
+          setError("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.");
+        } else {
+          setError(err.response?.data?.message || "Không thể tải khóa học");
+        }
+      }
+    };
+
+    if (token) fetchCourse();
+    else setError("Bạn cần đăng nhập");
+  }, [id, token]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Xử lý nested fields trong details
     if (name.startsWith("details.")) {
-      const key = name.split(".")[1];
-      setFormData((prev) => ({
+      const field = name.split(".")[1];
+      setCourse((prev) => ({
         ...prev,
         details: {
           ...prev.details,
-          [key]: value,
+          [field]: value,
         },
       }));
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      setCourse((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleChapterChange = (index, field, value) => {
-    const newChapters = [...formData.details.chapters];
-    newChapters[index][field] = value;
-    setFormData((prev) => ({
-      ...prev,
-      details: {
-        ...prev.details,
-        chapters: newChapters,
-      },
-    }));
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+        setCourse((prev) => ({ ...prev, imageUrl: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleLessonChange = (chapterIndex, lessonIndex, field, value) => {
-    const newChapters = [...formData.details.chapters];
-    newChapters[chapterIndex].lessons[lessonIndex][field] = value;
-    setFormData((prev) => ({
-      ...prev,
-      details: {
-        ...prev.details,
-        chapters: newChapters,
-      },
-    }));
-  };
-
+  // =============== Xử lý chương trình học ===============
   const addChapter = () => {
-    const newChapter = {
-      title: "",
-      description: "",
-      lessons: [{ title: "", content: "", videoUrl: "" }],
-    };
-    const newChapters = [...formData.details.chapters, newChapter];
-    setFormData((prev) => ({
+    setCourse((prev) => ({
       ...prev,
-      details: { ...prev.details, chapters: newChapters },
+      details: {
+        ...prev.details,
+        chapters: [
+          ...prev.details.chapters,
+          {
+            title: "",
+            description: "",
+            lessons: [{ title: "", content: "", videoUrl: "" }],
+          },
+        ],
+      },
     }));
+    setExpandedChapters((prev) => [...prev, true]);
+  };
 
-    setExpandedChapters(
-      newChapters.map((_, i) => i === newChapters.length - 1)
-    );
+  const removeChapter = (chapterIndex) => {
+    setCourse((prev) => {
+      const newChapters = [...prev.details.chapters];
+      newChapters.splice(chapterIndex, 1);
+
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          chapters: newChapters,
+        },
+      };
+    });
+
+    setExpandedChapters((prev) => {
+      const newExpanded = [...prev];
+      newExpanded.splice(chapterIndex, 1);
+      return newExpanded;
+    });
+  };
+
+  const handleChapterChange = (chapterIndex, field, value) => {
+    setCourse((prev) => {
+      const newChapters = [...prev.details.chapters];
+      newChapters[chapterIndex] = {
+        ...newChapters[chapterIndex],
+        [field]: value,
+      };
+
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          chapters: newChapters,
+        },
+      };
+    });
   };
 
   const addLesson = (chapterIndex) => {
-    const newChapters = [...formData.details.chapters];
-    newChapters[chapterIndex].lessons.push({
-      title: "",
-      content: "",
-      videoUrl: "",
+    setCourse((prev) => {
+      const newChapters = [...prev.details.chapters];
+      newChapters[chapterIndex] = {
+        ...newChapters[chapterIndex],
+        lessons: [
+          ...newChapters[chapterIndex].lessons,
+          { title: "", content: "", videoUrl: "" },
+        ],
+      };
+
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          chapters: newChapters,
+        },
+      };
     });
-    setFormData((prev) => ({
-      ...prev,
-      details: {
-        ...prev.details,
-        chapters: newChapters,
-      },
-    }));
-  };
-
-  const removeChapter = (index) => {
-    if (formData.details.chapters.length <= 1) {
-      alert("Phải có ít nhất một chương");
-      return;
-    }
-    const newChapters = [...formData.details.chapters];
-    newChapters.splice(index, 1);
-    setFormData((prev) => ({
-      ...prev,
-      details: {
-        ...prev.details,
-        chapters: newChapters,
-      },
-    }));
-
-    const newExpanded = [...expandedChapters];
-    newExpanded.splice(index, 1);
-    setExpandedChapters(newExpanded);
   };
 
   const removeLesson = (chapterIndex, lessonIndex) => {
-    const newChapters = [...formData.details.chapters];
-    if (newChapters[chapterIndex].lessons.length <= 1) {
-      alert("Phải có ít nhất một bài học");
-      return;
-    }
-    newChapters[chapterIndex].lessons.splice(lessonIndex, 1);
-    setFormData((prev) => ({
+    setCourse((prev) => {
+      const newChapters = [...prev.details.chapters];
+      const newLessons = [...newChapters[chapterIndex].lessons];
+      newLessons.splice(lessonIndex, 1);
+
+      newChapters[chapterIndex] = {
+        ...newChapters[chapterIndex],
+        lessons: newLessons,
+      };
+
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          chapters: newChapters,
+        },
+      };
+    });
+  };
+
+  const handleLessonChange = (chapterIndex, lessonIndex, field, value) => {
+    setCourse((prev) => {
+      const newChapters = [...prev.details.chapters];
+      const newLessons = [...newChapters[chapterIndex].lessons];
+
+      newLessons[lessonIndex] = {
+        ...newLessons[lessonIndex],
+        [field]: value,
+      };
+
+      newChapters[chapterIndex] = {
+        ...newChapters[chapterIndex],
+        lessons: newLessons,
+      };
+
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          chapters: newChapters,
+        },
+      };
+    });
+  };
+
+  const onChapterDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const newChapters = [...course.details.chapters];
+    const [movedChapter] = newChapters.splice(result.source.index, 1);
+    newChapters.splice(result.destination.index, 0, movedChapter);
+
+    setCourse((prev) => ({
       ...prev,
       details: {
         ...prev.details,
         chapters: newChapters,
       },
     }));
-  };
 
-  const toggleChapter = (index) => {
+    // Cập nhật trạng thái mở rộng sau khi kéo thả
     const newExpanded = [...expandedChapters];
-    newExpanded[index] = !newExpanded[index];
+    const [movedExpanded] = newExpanded.splice(result.source.index, 1);
+    newExpanded.splice(result.destination.index, 0, movedExpanded);
     setExpandedChapters(newExpanded);
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formDataImage = new FormData();
-    formDataImage.append("image", file);
-
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/upload",
-        formDataImage,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      setFormData((prev) => ({
-        ...prev,
-        imageUrl: res.data.imageUrl,
-      }));
-      setPreviewImage(URL.createObjectURL(file));
-      setError("");
-    } catch (err) {
-      console.error(err);
-      setError("Tải ảnh lên thất bại.");
-    }
+  // =============== Xử lý Quiz ===============
+  const addQuizQuestion = () => {
+    setCourse((prev) => ({
+      ...prev,
+      details: {
+        ...prev.details,
+        quiz: [
+          ...(prev.details.quiz || []),
+          {
+            question: "",
+            options: ["", ""],
+            correctAnswerIndex: 0,
+          },
+        ],
+      },
+    }));
+    setExpandedQuiz((prev) => [...prev, true]);
   };
 
+  const removeQuizQuestion = (questionIndex) => {
+    setCourse((prev) => {
+      const newQuiz = [...(prev.details?.quiz || [])];
+      newQuiz.splice(questionIndex, 1);
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          quiz: newQuiz,
+        },
+      };
+    });
+
+    setExpandedQuiz((prev) => {
+      const newExpanded = [...prev];
+      newExpanded.splice(questionIndex, 1);
+      return newExpanded;
+    });
+  };
+
+  const handleQuizQuestionChange = (questionIndex, value) => {
+    setCourse((prev) => {
+      const newQuiz = [...(prev.details?.quiz || [])];
+      newQuiz[questionIndex] = {
+        ...newQuiz[questionIndex],
+        question: value,
+      };
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          quiz: newQuiz,
+        },
+      };
+    });
+  };
+
+  const addQuizOption = (questionIndex) => {
+    setCourse((prev) => {
+      const newQuiz = [...(prev.details?.quiz || [])];
+      newQuiz[questionIndex] = {
+        ...newQuiz[questionIndex],
+        options: [...newQuiz[questionIndex].options, ""],
+      };
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          quiz: newQuiz,
+        },
+      };
+    });
+  };
+
+  const removeQuizOption = (questionIndex, optionIndex) => {
+    setCourse((prev) => {
+      const newQuiz = [...(prev.details?.quiz || [])];
+      const newOptions = [...newQuiz[questionIndex].options];
+      newOptions.splice(optionIndex, 1);
+
+      let correctIndex = newQuiz[questionIndex].correctAnswerIndex;
+      if (optionIndex === correctIndex) correctIndex = 0;
+      else if (optionIndex < correctIndex) correctIndex--;
+
+      newQuiz[questionIndex] = {
+        ...newQuiz[questionIndex],
+        options: newOptions,
+        correctAnswerIndex: correctIndex,
+      };
+
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          quiz: newQuiz,
+        },
+      };
+    });
+  };
+
+  const handleQuizOptionChange = (questionIndex, optionIndex, value) => {
+    setCourse((prev) => {
+      const newQuiz = [...(prev.details?.quiz || [])];
+      const newOptions = [...newQuiz[questionIndex].options];
+      newOptions[optionIndex] = value;
+
+      newQuiz[questionIndex] = {
+        ...newQuiz[questionIndex],
+        options: newOptions,
+      };
+
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          quiz: newQuiz,
+        },
+      };
+    });
+  };
+
+  const handleCorrectAnswerChange = (questionIndex, optionIndex) => {
+    setCourse((prev) => {
+      const newQuiz = [...(prev.details?.quiz || [])];
+      newQuiz[questionIndex] = {
+        ...newQuiz[questionIndex],
+        correctAnswerIndex: optionIndex,
+      };
+      return {
+        ...prev,
+        details: {
+          ...prev.details,
+          quiz: newQuiz,
+        },
+      };
+    });
+  };
+
+  const toggleQuizQuestion = (index) => {
+    setExpandedQuiz((prev) => {
+      const newExpanded = [...prev];
+      newExpanded[index] = !newExpanded[index];
+      return newExpanded;
+    });
+  };
+
+  // =============== Gửi dữ liệu ===============
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
-
-    const user = JSON.parse(localStorage.getItem("user"));
-    const token = localStorage.getItem("token");
-    const userId = user?.id || user?._id; // fallback nếu dùng _id
-
-    if (!userId || !token) {
-      setError("Thiếu thông tin xác thực. Vui lòng đăng nhập lại.");
-      setLoading(false);
-      return;
-    }
-
-    const {
-      title,
-      description,
-      category,
-      level,
-      price,
-      duration,
-      imageUrl,
-      details,
-      quiz,
-    } = formData;
-
-    if (
-      !title ||
-      !description ||
-      !category ||
-      !level ||
-      !price ||
-      !duration ||
-      !imageUrl ||
-      !details.type
-    ) {
-      setError("Vui lòng điền đầy đủ thông tin.");
-      setLoading(false);
-      return;
-    }
-
-    // ✅ Validate chương và bài học
-    for (let chapter of details.chapters) {
-      if (!chapter.title || chapter.lessons.length === 0) {
-        setError("Vui lòng điền đầy đủ thông tin cho mỗi chương và bài học.");
-        setLoading(false);
-        return;
-      }
-      for (let lesson of chapter.lessons) {
-        if (!lesson.title) {
-          setError("Mỗi bài học cần có tiêu đề.");
-          setLoading(false);
-          return;
-        }
-      }
-    }
-
-    // ✅ Optional: Validate quiz
-    if (quiz && quiz.length > 0) {
-      for (let q of quiz) {
-        if (!q.question || q.options.length < 2) {
-          setError(
-            "Mỗi câu hỏi cần ít nhất 2 phương án và không được để trống."
-          );
-          setLoading(false);
-          return;
-        }
-        if (
-          q.correctAnswerIndex === undefined ||
-          q.correctAnswerIndex === null
-        ) {
-          setError("Mỗi câu hỏi cần có đáp án đúng.");
-          setLoading(false);
-          return;
-        }
-      }
-    }
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/courses",
-        {
-          title,
-          description,
-          category,
-          level,
-          price,
-          duration,
-          instructor: userId,
-          imageUrl,
-          details: {
-            ...details,
-            quiz:
-              quiz?.map((q) => ({
-                question: q.question,
-                options: q.options.filter((opt) => opt.trim() !== ""),
-                correctAnswerIndex: q.correctAnswerIndex,
-              })) || [],
-          },
+      // Chuẩn bị dữ liệu để gửi
+      const updateData = {
+        title: course.title,
+        description: course.description,
+        price: course.price,
+        category: course.category,
+        level: course.level,
+        duration: course.duration,
+        imageUrl: course.imageUrl,
+        details: course.details,
+      };
+      console.log("Data gửi đi:", updateData);
+      await axios.put(`http://localhost:5000/api/courses/${id}`, updateData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      });
 
-      if (res.status === 201) {
-        setSuccess("Thêm khóa học thành công!");
-        setFormData({
-          title: "",
-          description: "",
-          category: "",
-          level: "",
-          price: "",
-          duration: "",
-          instructor: "",
-          imageUrl: "",
-          details: {
-            type: "",
-            chapters: [
-              {
-                title: "",
-                description: "",
-                lessons: [{ title: "", content: "", videoUrl: "" }],
-              },
-            ],
-          },
-          quiz: [], // Reset quiz sau khi tạo
-        });
-        setPreviewImage(null);
-        setTimeout(() => navigate("/dashboard"), 1500);
-      } else {
-        setError("Thêm khóa học thất bại.");
-      }
+      alert("Cập nhật thành công!");
+      navigate("/instructor/dashboard");
     } catch (err) {
-      console.error(err);
-      setError("Đã xảy ra lỗi khi thêm khóa học.");
+      alert(err.response?.data?.message || "Cập nhật thất bại");
     } finally {
       setLoading(false);
     }
   };
 
+  if (!token) return <p className="error-message">Bạn chưa đăng nhập</p>;
+  if (error) return <p className="error-message">{error}</p>;
+  if (!course.title) return <p>Đang tải khóa học...</p>;
 
-   // Quiz functions
-  const addQuizQuestion = () => {
-    setFormData((prev) => ({
-      ...prev,
-      quiz: [
-        ...prev.quiz,
-        {
-          question: "",
-          options: ["", ""],
-          correctAnswerIndex: 0,
-        },
-      ],
-    }));
-    setExpandedQuiz([...expandedQuiz, true]);
-  };
-
-  const removeQuizQuestion = (index) => {
-    const newQuiz = [...formData.quiz];
-    newQuiz.splice(index, 1);
-    setFormData((prev) => ({
-      ...prev,
-      quiz: newQuiz,
-    }));
-
-    const newExpanded = [...expandedQuiz];
-    newExpanded.splice(index, 1);
-    setExpandedQuiz(newExpanded);
-  };
-
-  const handleQuizQuestionChange = (index, value) => {
-    const newQuiz = [...formData.quiz];
-    newQuiz[index].question = value;
-    setFormData((prev) => ({
-      ...prev,
-      quiz: newQuiz,
-    }));
-  };
-
-  const handleQuizOptionChange = (qIndex, optIndex, value) => {
-    const newQuiz = [...formData.quiz];
-    newQuiz[qIndex].options[optIndex] = value;
-    setFormData((prev) => ({
-      ...prev,
-      quiz: newQuiz,
-    }));
-  };
-
-  const handleCorrectAnswerChange = (qIndex, value) => {
-    const newQuiz = [...formData.quiz];
-    newQuiz[qIndex].correctAnswerIndex = Number(value);
-    setFormData((prev) => ({
-      ...prev,
-      quiz: newQuiz,
-    }));
-  };
-
-  const toggleQuizQuestion = (index) => {
-    const newExpanded = [...expandedQuiz];
-    newExpanded[index] = !newExpanded[index];
-    setExpandedQuiz(newExpanded);
-  };
-
-  const addQuizOption = (qIndex) => {
-    const newQuiz = [...formData.quiz];
-    newQuiz[qIndex].options.push("");
-    setFormData((prev) => ({
-      ...prev,
-      quiz: newQuiz,
-    }));
-  };
-
-  const removeQuizOption = (qIndex, optIndex) => {
-    const newQuiz = [...formData.quiz];
-    if (newQuiz[qIndex].options.length <= 2) {
-      alert("Phải có ít nhất 2 lựa chọn");
-      return;
-    }
-    newQuiz[qIndex].options.splice(optIndex, 1);
-
-    if (newQuiz[qIndex].correctAnswerIndex === optIndex) {
-      newQuiz[qIndex].correctAnswerIndex = 0;
-    } else if (newQuiz[qIndex].correctAnswerIndex > optIndex) {
-      newQuiz[qIndex].correctAnswerIndex = newQuiz[qIndex].correctAnswerIndex - 1;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      quiz: newQuiz,
-    }));
-  };
   return (
     <div className="add-course-container">
       <div className="add-course-header">
-        <h2>Thêm Khóa Học Mới</h2>
-        <p>Điền đầy đủ thông tin để tạo khóa học mới</p>
+        <h2>Chỉnh Sửa Khóa Học</h2>
+        <p>Cập nhật thông tin cho khóa học của bạn</p>
       </div>
 
       <form onSubmit={handleSubmit} className="add-course-form">
@@ -451,7 +453,7 @@ const AddCourse = () => {
               <input
                 name="title"
                 placeholder="Nhập tên khóa học"
-                value={formData.title}
+                value={course.title}
                 onChange={handleChange}
                 required
               />
@@ -464,7 +466,7 @@ const AddCourse = () => {
               <input
                 name="category"
                 placeholder="Ví dụ: Lập trình, Thiết kế"
-                value={formData.category}
+                value={course.category}
                 onChange={handleChange}
                 required
               />
@@ -476,7 +478,7 @@ const AddCourse = () => {
               </label>
               <select
                 name="level"
-                value={formData.level}
+                value={course.level}
                 onChange={handleChange}
                 required
               >
@@ -495,7 +497,7 @@ const AddCourse = () => {
                 name="price"
                 placeholder="Nhập giá khóa học"
                 type="number"
-                value={formData.price}
+                value={course.price}
                 onChange={handleChange}
                 required
               />
@@ -509,7 +511,7 @@ const AddCourse = () => {
                 name="duration"
                 placeholder="Ví dụ: 8 tuần, 30 giờ"
                 type="text"
-                value={formData.duration}
+                value={course.duration}
                 onChange={handleChange}
                 required
               />
@@ -521,7 +523,7 @@ const AddCourse = () => {
               </label>
               <select
                 name="details.type"
-                value={formData.details.type}
+                value={course.details.type}
                 onChange={handleChange}
                 required
               >
@@ -540,7 +542,7 @@ const AddCourse = () => {
             <textarea
               name="description"
               placeholder="Mô tả chi tiết về khóa học..."
-              value={formData.description}
+              value={course.description}
               onChange={handleChange}
               rows={5}
               required
@@ -567,7 +569,6 @@ const AddCourse = () => {
                 id="image"
                 accept="image/*"
                 onChange={handleImageUpload}
-                required
                 className="hidden-input"
               />
             </div>
@@ -592,36 +593,13 @@ const AddCourse = () => {
               className="add-chapter-btn"
               onClick={() => {
                 addChapter();
-                setExpandedChapters(
-                  formData.details.chapters.map(() => false).concat([true])
-                );
               }}
             >
               + Thêm chương
             </button>
           </div>
 
-          <DragDropContext
-            onDragEnd={(result) => {
-              if (!result.destination) return;
-
-              const newChapters = Array.from(formData.details.chapters);
-              const [movedChapter] = newChapters.splice(result.source.index, 1);
-              newChapters.splice(result.destination.index, 0, movedChapter);
-
-              setFormData((prev) => ({
-                ...prev,
-                details: {
-                  ...prev.details,
-                  chapters: newChapters,
-                },
-              }));
-
-              const newExpanded = newChapters.map(() => false);
-              newExpanded[result.destination.index] = true;
-              setExpandedChapters(newExpanded);
-            }}
-          >
+          <DragDropContext onDragEnd={onChapterDragEnd}>
             <Droppable
               droppableId="chapters-droppable"
               isDropDisabled={false}
@@ -630,7 +608,7 @@ const AddCourse = () => {
             >
               {(provided) => (
                 <div {...provided.droppableProps} ref={provided.innerRef}>
-                  {formData.details.chapters.map((chapter, cIdx) => (
+                  {course.details.chapters.map((chapter, cIdx) => (
                     <Draggable
                       key={`chapter-${cIdx}`}
                       draggableId={`chapter-${cIdx}`}
@@ -648,10 +626,8 @@ const AddCourse = () => {
                               expandedChapters[cIdx] ? "expanded" : ""
                             }`}
                             onClick={() => {
-                              const newExpanded = formData.details.chapters.map(
-                                () => false
-                              );
-                              newExpanded[cIdx] = true;
+                              const newExpanded = [...expandedChapters];
+                              newExpanded[cIdx] = !newExpanded[cIdx];
                               setExpandedChapters(newExpanded);
                             }}
                           >
@@ -660,7 +636,7 @@ const AddCourse = () => {
                                 Chương {cIdx + 1}:
                               </span>
                               <span>
-                                {chapter.title || `Chương chưa có tiêu đề`}
+                                {chapter.title || "Chương chưa có tiêu đề"}
                               </span>
                             </div>
                             <span className="arrow">▼</span>
@@ -789,7 +765,7 @@ const AddCourse = () => {
                                 type="button"
                                 className="remove-btn"
                                 onClick={() => removeChapter(cIdx)}
-                                disabled={formData.details.chapters.length <= 1}
+                                disabled={course.details.chapters.length <= 1}
                               >
                                 Xóa chương này
                               </button>
@@ -819,7 +795,7 @@ const AddCourse = () => {
             </button>
           </div>
 
-          {formData.quiz.length === 0 ? (
+          {(course.details?.quiz?.length || 0) === 0 ? (
             <div className="quiz-placeholder">
               <div className="quiz-icon">?</div>
               <p>Chưa có câu hỏi nào</p>
@@ -829,7 +805,7 @@ const AddCourse = () => {
             </div>
           ) : (
             <div className="quiz-container">
-              {formData.quiz.map((question, qIdx) => (
+              {course.details.quiz.map((question, qIdx) => (
                 <div
                   key={qIdx}
                   className={`quiz-item ${
@@ -980,19 +956,18 @@ const AddCourse = () => {
           <button type="submit" className="submit-btn" disabled={loading}>
             {loading ? (
               <>
-                <span className="spinner"></span> Đang xử lý...
+                <span className="spinner"></span> Đang lưu...
               </>
             ) : (
-              "Tạo Khóa Học"
+              "Lưu Thay Đổi"
             )}
           </button>
         </div>
       </form>
 
       {error && <p className="error-message">{error}</p>}
-      {success && <p className="success-message">{success}</p>}
     </div>
   );
 };
 
-export default AddCourse;
+export default EditCourse;

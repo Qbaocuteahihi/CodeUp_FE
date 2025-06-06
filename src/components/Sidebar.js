@@ -6,6 +6,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaPlusCircle,
+  FaUserShield,
   FaStar,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -40,15 +41,20 @@ const Sidebar = () => {
       case "roadmap":
         navigate("/roadmap");
         break;
-      
+      case "courses":
+        navigate("/courses");
+        break;
       case "addcourse":
         navigate("/addcourse");
+        break;
+      case "admin":
+        navigate("/admin/dashboard");
         break;
       case "favorites":
         navigate("/favorites");
         break;
-      case "courses":
-        navigate("/my-courses");
+      case "instructor":
+        navigate("/instructor/dashboard");
         break;
       default:
         break;
@@ -86,13 +92,7 @@ const Sidebar = () => {
           <FaHome className="icon" />
           {!collapsed && <span>Trang chủ</span>}
         </div>
-        <div
-          className={`menu-item ${activeItem === "roadmap" ? "active" : ""}`}
-          onClick={() => handleItemClick("roadmap")}
-        >
-          <FaStream className="icon" />
-          {!collapsed && <span>Lộ trình</span>}
-        </div>
+
         <div
           className={`menu-item ${activeItem === "courses" ? "active" : ""}`}
           onClick={() => handleItemClick("courses")}
@@ -100,17 +100,7 @@ const Sidebar = () => {
           <FaBook className="icon" />
           {!collapsed && <span>Khóa học đã đăng kí</span>}
         </div>
-        {user && (user.role === "instructor" || user.role === "admin") && (
-          <div
-            className={`menu-item ${
-              activeItem === "addcourse" ? "active" : ""
-            }`}
-            onClick={() => handleItemClick("addcourse")}
-          >
-            <FaPlusCircle className="icon" />
-            {!collapsed && <span>Thêm Khóa Học</span>}
-          </div>
-        )}
+
         <div
           className={`menu-item ${activeItem === "favorites" ? "active" : ""}`}
           onClick={() => handleItemClick("favorites")}
@@ -118,6 +108,38 @@ const Sidebar = () => {
           <FaStar className="icon" />
           {!collapsed && <span>Danh sách yêu thích</span>}
         </div>
+
+        {(user?.role === "instructor" || user?.role === "admin") && (
+          <>
+            <div
+              className={`menu-item ${activeItem === "addcourse" ? "active" : ""}`}
+              onClick={() => handleItemClick("addcourse")}
+            >
+              <FaPlusCircle className="icon" />
+              {!collapsed && <span>Thêm Khóa Học</span>}
+            </div>
+
+            {user?.role === "instructor" && (
+              <div
+                className={`menu-item ${activeItem === "instructor" ? "active" : ""}`}
+                onClick={() => handleItemClick("instructor")}
+              >
+                <FaStream className="icon" />
+                {!collapsed && <span>Giảng dạy</span>}
+              </div>
+            )}
+          </>
+        )}
+
+        {user?.role === "admin" && (
+          <div
+            className={`menu-item ${activeItem === "admin" ? "active" : ""}`}
+            onClick={() => handleItemClick("admin")}
+          >
+            <FaUserShield className="icon" />
+            {!collapsed && <span>Trang Admin</span>}
+          </div>
+        )}
       </div>
     </div>
   );

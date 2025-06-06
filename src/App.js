@@ -19,6 +19,7 @@ import "slick-carousel/slick/slick-theme.css";
 import "./App.css";
 import MyCourses from "./pages/MyCourses"; 
 import InstructorDashboard from "./pages/InstructorDashboard";
+import EditCourse from "./pages/EditCourse";
 
 function AppLayout({ user, onLogout, children }) {
   return (
@@ -66,6 +67,7 @@ function App() {
         <Route path="/admin/users/:id" element={<UserDetail />} />
         <Route path="/courses/:id" element={<CourseDetail user={user} />} />
         <Route path="/addcourse" element={<AddCourse />} />
+        <Route path="/editcourse/:id" element={<EditCourse />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/payment-status" element={<PaymentStatus />} />
         <Route

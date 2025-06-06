@@ -192,7 +192,8 @@ const InstructorDashboard = () => {
                         </button>
                         <button
                           className="btn btn-sm btn-primary"
-                          onClick={() => navigate(`/instructor/courses/${course._id}/edit`)}
+                          onClick={() => navigate(`/editcourse/${course._id}`)}
+
                         >
                           Sửa
                         </button>
