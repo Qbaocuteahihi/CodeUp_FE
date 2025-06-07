@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import RatingForm from "../components/RatingForm";
 import QuizViewer from "../components/QuizViewer";
 import "./CourseDetail.css";
+
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -107,14 +108,18 @@ const CourseDetail = () => {
       {course.details?.chapters?.map((chapter, ci) => (
         <div className="chapter-block" key={ci}>
           <h3>
-            Chương {ci + 1}: {chapter.title}
+            <span className="chapter-number">Chương {ci + 1}:</span>{" "}
+            {chapter.title}
           </h3>
           <p>{chapter.description}</p>
           {chapter.lessons?.map((lesson, li) => {
             const video = getYouTubeEmbedUrl(lesson.videoUrl);
             return (
               <div key={li} className="lesson-item">
-                <h4>{lesson.title}</h4>
+                <h4 className="lesson-title">
+                  <span className="lesson-number">Bài {li + 1}:</span>{" "}
+                  {lesson.title}
+                </h4>
                 {lesson.content && (
                   <div className="lesson-steps">
                     {renderLessonContent(lesson.content)}
@@ -137,6 +142,7 @@ const CourseDetail = () => {
                         href={lesson.videoUrl}
                         target="_blank"
                         rel="noreferrer"
+                        className="video-link"
                       >
                         Xem video
                       </a>
@@ -159,56 +165,71 @@ const CourseDetail = () => {
       {course.details?.syllabus && (
         <>
           <h3>Đề cương khóa học</h3>
-          <ul>
+          <ul className="syllabus-list">
             {course.details.syllabus.map((item, i) => (
-              <li key={i}>{item}</li>
+              <li key={i} className="syllabus-item">
+                <span className="syllabus-number">{i + 1}.</span> {item}
+              </li>
             ))}
           </ul>
         </>
       )}
 
       <div className="course-meta">
-        <div>Loại khóa học: {course.details?.type || "N/A"}</div>
-        <div>Thời lượng: {course.details?.duration || course.duration}</div>
+        <div>
+          <strong>Loại khóa học:</strong> {course.details?.type || "N/A"}
+        </div>
+        <div>
+          <strong>Thời lượng:</strong>{" "}
+          {course.details?.duration || course.duration} giờ
+        </div>
       </div>
     </div>
   );
 
   const renderReviews = () => (
     <div className="section reviews-section">
+
       {course.reviews?.length > 0 ? (
         course.reviews.map((review, i) => (
           <div key={i} className="review-item">
-            <div className="review-author">{review.userName}</div>
-            <div className="review-rating">{renderStars(review.rating)}</div>
+            <div className="review-header">
+              <div className="review-author">{review.userName}</div>
+              <div className="review-rating">{renderStars(review.rating)}</div>
+            </div>
             <div className="review-comment">{review.comment}</div>
           </div>
         ))
       ) : (
-        <p>Chưa có đánh giá nào.</p>
+        <p className="no-reviews"></p>
       )}
-      <RatingForm
-        courseId={id}
-        onReviewSubmitted={() => window.location.reload()}
-      />
+
+      <div className="add-review-section">
+        
+        <RatingForm
+          courseId={id}
+          onReviewSubmitted={() => window.location.reload()}
+        />
+      </div>
     </div>
   );
 
   return (
     <div className="course-detail-container">
       <button className="back-button" onClick={() => navigate("/")}>
-        ← Trở về
+        ← Trở về trang chính
       </button>
 
       <div className="course-header">
         <h1>{course.title}</h1>
         <div className="course-meta">
+          
           <div className="meta-item">
-            {renderStars(course.rating)} ({course.rating?.toFixed(1)})
+            <span className="meta-icon">👥</span> {course.students} Học Viên
           </div>
-          <div className="meta-item">👥 {course.students} học viên</div>
           <div className="meta-item">
-            ⏳ {course.details?.duration || course.duration}
+            <span className="meta-icon">⏳</span>{" "}
+            {course.details?.duration || course.duration}
           </div>
         </div>
       </div>
@@ -222,10 +243,10 @@ const CourseDetail = () => {
           >
             {
               {
-                content: "Nội dung",
+                content: "Nội dung khóa học",
                 overview: "Tổng quan",
-                quiz: "Quiz",
-                reviews: "Đánh giá",
+                quiz: "Câu hỏi kiểm tra",
+                reviews: "Đánh giá ",
               }[tab]
             }
           </button>
@@ -236,7 +257,10 @@ const CourseDetail = () => {
         {activeTab === "content" && renderChapters()}
         {activeTab === "overview" && renderOverview()}
         {activeTab === "quiz" && (
-          <QuizViewer courseId={id} quizData={course.details?.quiz} />
+          <div className="quiz-section">
+            <h2>Câu hỏi kiểm tra kiến thức</h2>
+            <QuizViewer courseId={id} quizData={course.details?.quiz} />
+          </div>
         )}
 
         {activeTab === "reviews" && renderReviews()}
