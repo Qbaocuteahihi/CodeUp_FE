@@ -6,7 +6,7 @@
   background-color: #fff;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
 }
 
@@ -270,6 +270,7 @@
 }
 
 .lesson-number {
+  
   color: white;
   font-weight: 600;
   padding: 4px 12px;
@@ -321,7 +322,7 @@
   border: none;
   cursor: pointer;
   font-weight: 600;
-
+  
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -417,9 +418,7 @@
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .error-message,
@@ -461,6 +460,7 @@
 .quiz-placeholder .quiz-icon {
   font-size: 48px;
   margin-bottom: 15px;
+  
 }
 
 .quiz-placeholder .note {
@@ -469,6 +469,7 @@
 }
 
 .quiz-container {
+
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -504,6 +505,7 @@
 }
 
 .quiz-number {
+  
   color: rgb(18, 17, 17);
   padding: 3px 8px;
   border-radius: 4px;
@@ -525,8 +527,7 @@
   gap: 10px;
 }
 
-.quiz-toggle-btn,
-.quiz-remove-btn {
+.quiz-toggle-btn, .quiz-remove-btn {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
