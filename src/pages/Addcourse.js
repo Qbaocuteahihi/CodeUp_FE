@@ -6,36 +6,56 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 const AddCourse = () => {
   const [formData, setFormData] = useState(() => {
     const savedData = localStorage.getItem("addCourseFormData");
-    return savedData
-      ? JSON.parse(savedData)
-      : {
-          title: "",
-          description: "",
-          category: "",
-          level: "",
-          price: "",
-          duration: "",
-          instructor: "",
-          imageUrl: "",
-          details: {
-            type: "",
+
+    // Xử lý dữ liệu không hợp lệ từ localStorage
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+
+        // Kiểm tra và khôi phục cấu trúc chapters nếu cần
+        if (
+          !parsed.details?.chapters ||
+          !Array.isArray(parsed.details.chapters)
+        ) {
+          parsed.details = {
+            ...(parsed.details || {}),
             chapters: [
               {
                 title: "",
                 description: "",
-                lessons: [
-                  {
-                    title: "",
-                    content: "",
-                    videoUrl: "",
-                  },
-                ],
+                lessons: [{ title: "", content: "", videoUrl: "" }],
               },
             ],
-            quiz: [],
+          };
+        }
+        return parsed;
+      } catch (e) {
+        console.error("Lỗi phân tích dữ liệu localStorage", e);
+      }
+    }
+
+    // Trả về giá trị mặc định nếu không có dữ liệu
+    return {
+      title: "",
+      description: "",
+      category: "",
+      level: "",
+      price: "",
+      duration: "",
+      instructor: "",
+      imageUrl: "",
+      details: {
+        type: "",
+        chapters: [
+          {
+            title: "",
+            description: "",
+            lessons: [{ title: "", content: "", videoUrl: "" }],
           },
-          // quiz: [],
-        };
+        ],
+        quiz: [],
+      },
+    };
   });
 
   const [loading, setLoading] = useState(false);
@@ -43,7 +63,9 @@ const AddCourse = () => {
   const [success, setSuccess] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
   const [expandedChapters, setExpandedChapters] = useState(
-    formData.details.chapters.map((_, i, arr) => i === arr.length - 1)
+    formData.details?.chapters?.length > 0
+      ? formData.details.chapters.map((_, i, arr) => i === arr.length - 1)
+      : [true] // Mặc định mở chương đầu tiên nếu không có chương nào
   );
   const [expandedQuiz, setExpandedQuiz] = useState([]);
   const navigate = useNavigate();
@@ -128,7 +150,7 @@ const AddCourse = () => {
   };
 
   const removeChapter = (index) => {
-    if (formData.details.chapters.length <= 1) {
+    if (!formData.details.chapters || formData.details.chapters.length <= 1) {
       alert("Phải có ít nhất một chương");
       return;
     }
@@ -342,8 +364,7 @@ const AddCourse = () => {
     }
   };
 
-
-   // Quiz functions
+  // Quiz functions
   const addQuizQuestion = () => {
     setFormData((prev) => ({
       ...prev,
@@ -425,7 +446,8 @@ const AddCourse = () => {
     if (newQuiz[qIndex].correctAnswerIndex === optIndex) {
       newQuiz[qIndex].correctAnswerIndex = 0;
     } else if (newQuiz[qIndex].correctAnswerIndex > optIndex) {
-      newQuiz[qIndex].correctAnswerIndex = newQuiz[qIndex].correctAnswerIndex - 1;
+      newQuiz[qIndex].correctAnswerIndex =
+        newQuiz[qIndex].correctAnswerIndex - 1;
     }
 
     setFormData((prev) => ({
