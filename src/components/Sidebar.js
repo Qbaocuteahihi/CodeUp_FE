@@ -42,7 +42,7 @@ const Sidebar = () => {
         navigate("/roadmap");
         break;
       case "courses":
-        navigate("/courses");
+        navigate("/my-courses");
         break;
       case "addcourse":
         navigate("/addcourse");

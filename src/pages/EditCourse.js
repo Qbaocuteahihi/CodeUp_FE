@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import "./AddCourse.css"; // Sử dụng cùng file CSS với AddCourse
 
 const EditCourse = () => {
   const { id } = useParams();
@@ -27,6 +28,7 @@ const EditCourse = () => {
   const [expandedChapters, setExpandedChapters] = useState([]);
   const [expandedQuiz, setExpandedQuiz] = useState([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -36,7 +38,6 @@ const EditCourse = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Chuẩn hóa dữ liệu để đảm bảo cấu trúc phù hợp
         const courseData = res.data;
         setCourse({
           title: courseData.title || "",
@@ -78,7 +79,6 @@ const EditCourse = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Xử lý nested fields trong details
     if (name.startsWith("details.")) {
       const field = name.split(".")[1];
       setCourse((prev) => ({
@@ -105,7 +105,7 @@ const EditCourse = () => {
     }
   };
 
-  // =============== Xử lý chương trình học ===============
+  // Xử lý chương trình học
   const addChapter = () => {
     setCourse((prev) => ({
       ...prev,
@@ -245,14 +245,13 @@ const EditCourse = () => {
       },
     }));
 
-    // Cập nhật trạng thái mở rộng sau khi kéo thả
     const newExpanded = [...expandedChapters];
     const [movedExpanded] = newExpanded.splice(result.source.index, 1);
     newExpanded.splice(result.destination.index, 0, movedExpanded);
     setExpandedChapters(newExpanded);
   };
 
-  // =============== Xử lý Quiz ===============
+  // Xử lý Quiz
   const addQuizQuestion = () => {
     setCourse((prev) => ({
       ...prev,
@@ -397,13 +396,14 @@ const EditCourse = () => {
     });
   };
 
-  // =============== Gửi dữ liệu ===============
+  // Gửi dữ liệu
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
-      // Chuẩn bị dữ liệu để gửi
       const updateData = {
         title: course.title,
         description: course.description,
@@ -414,7 +414,7 @@ const EditCourse = () => {
         imageUrl: course.imageUrl,
         details: course.details,
       };
-      console.log("Data gửi đi:", updateData);
+
       await axios.put(`http://localhost:5000/api/courses/${id}`, updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -422,10 +422,10 @@ const EditCourse = () => {
         },
       });
 
-      alert("Cập nhật thành công!");
-      navigate("/instructor/dashboard");
+      setSuccess("Cập nhật khóa học thành công!");
+      setTimeout(() => navigate("/instructor/dashboard"), 1500);
     } catch (err) {
-      alert(err.response?.data?.message || "Cập nhật thất bại");
+      setError(err.response?.data?.message || "Cập nhật thất bại");
     } finally {
       setLoading(false);
     }
@@ -443,16 +443,17 @@ const EditCourse = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="add-course-form">
+        {/* Phần Thông Tin Cơ Bản */}
         <div className="form-section">
-          <h3>Thông tin cơ bản</h3>
+          <h3>Thông Tin Cơ Bản</h3>
           <div className="form-grid">
             <div className="form-group">
               <label>
-                Tên khóa học <span className="required">*</span>
+                Tiêu Đề Khóa Học <span className="required">*</span>
               </label>
               <input
                 name="title"
-                placeholder="Nhập tên khóa học"
+                placeholder="Nhập tiêu đề khóa học"
                 value={course.title}
                 onChange={handleChange}
                 required
@@ -461,7 +462,7 @@ const EditCourse = () => {
 
             <div className="form-group">
               <label>
-                Danh mục <span className="required">*</span>
+                Danh Mục <span className="required">*</span>
               </label>
               <input
                 name="category"
@@ -474,7 +475,7 @@ const EditCourse = () => {
 
             <div className="form-group">
               <label>
-                Cấp độ <span className="required">*</span>
+                Cấp Độ <span className="required">*</span>
               </label>
               <select
                 name="level"
@@ -483,9 +484,9 @@ const EditCourse = () => {
                 required
               >
                 <option value="">Chọn cấp độ</option>
-                <option value="Cơ bản">Cơ bản</option>
-                <option value="Trung cấp">Trung cấp</option>
-                <option value="Nâng cao">Nâng cao</option>
+                <option value="Cơ bản">Mới Bắt Đầu</option>
+                <option value="Trung cấp">Trung Cấp</option>
+                <option value="Nâng cao">Nâng Cao</option>
               </select>
             </div>
 
@@ -505,7 +506,7 @@ const EditCourse = () => {
 
             <div className="form-group">
               <label>
-                Thời lượng <span className="required">*</span>
+                Thời Lượng <span className="required">*</span>
               </label>
               <input
                 name="duration"
@@ -519,7 +520,7 @@ const EditCourse = () => {
 
             <div className="form-group">
               <label>
-                Loại khóa học <span className="required">*</span>
+                Loại Khóa Học <span className="required">*</span>
               </label>
               <select
                 name="details.type"
@@ -529,15 +530,15 @@ const EditCourse = () => {
               >
                 <option value="">Chọn loại khóa học</option>
                 <option value="Video">Video</option>
-                <option value="Text">Văn bản</option>
-                <option value="Combo">Kết hợp</option>
+                <option value="Text">Văn Bản</option>
+                <option value="Combo">Kết Hợp</option>
               </select>
             </div>
           </div>
 
           <div className="form-group">
             <label>
-              Mô tả khóa học <span className="required">*</span>
+              Mô Tả Khóa Học <span className="required">*</span>
             </label>
             <textarea
               name="description"
@@ -550,15 +551,16 @@ const EditCourse = () => {
           </div>
         </div>
 
+        {/* Phần Hình Ảnh Khóa Học */}
         <div className="form-section">
-          <h3>Hình ảnh khóa học</h3>
+          <h3>Hình Ảnh Khóa Học</h3>
           <div className="image-upload-container">
             <div className="upload-area">
               <label htmlFor="image" className="upload-label">
                 <div className="upload-icon">📁</div>
                 <p>
-                  Kéo thả ảnh vào đây hoặc{" "}
-                  <span className="browse-text">Chọn từ máy tính</span>
+                  Kéo và thả hình ảnh vào đây hoặc{" "}
+                  <span className="browse-text">Chọn tệp</span>
                 </p>
                 <p className="file-types">
                   (Hỗ trợ: JPG, PNG, GIF - Tối đa 5MB)
@@ -577,7 +579,7 @@ const EditCourse = () => {
                 <p className="preview-label">Xem trước:</p>
                 <img
                   src={previewImage}
-                  alt="Preview"
+                  alt="Xem trước khóa học"
                   className="preview-image"
                 />
               </div>
@@ -585,222 +587,266 @@ const EditCourse = () => {
           </div>
         </div>
 
+        {/* Phần Nội Dung Khóa Học */}
         <div className="form-section">
           <div className="section-header">
-            <h3>Chương trình học</h3>
+            <h3>Nội Dung Khóa Học</h3>
             <button
               type="button"
               className="add-chapter-btn"
-              onClick={() => {
-                addChapter();
-              }}
+              onClick={addChapter}
             >
-              + Thêm chương
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Thêm Chương
             </button>
           </div>
 
-          <DragDropContext onDragEnd={onChapterDragEnd}>
-            <Droppable
-              droppableId="chapters-droppable"
-              isDropDisabled={false}
-              isCombineEnabled={false}
-              ignoreContainerClipping={false}
-            >
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  {course.details.chapters.map((chapter, cIdx) => (
-                    <Draggable
-                      key={`chapter-${cIdx}`}
-                      draggableId={`chapter-${cIdx}`}
-                      index={cIdx}
-                    >
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="syllabus-item"
-                        >
+          {course.details.chapters.length === 0 ? (
+            <div className="empty-chapters">
+              <div className="empty-chapters-icon">📚</div>
+              <p className="empty-chapters-text">Chưa có chương nào</p>
+              <p className="empty-chapters-hint">
+                Nhấn "Thêm Chương" để bắt đầu xây dựng nội dung khóa học
+              </p>
+            </div>
+          ) : (
+            <DragDropContext onDragEnd={onChapterDragEnd}>
+              <Droppable droppableId="chapters-droppable">
+                {(provided) => (
+                  <div {...provided.droppableProps} ref={provided.innerRef}>
+                    {course.details.chapters.map((chapter, cIdx) => (
+                      <Draggable
+                        key={`chapter-${cIdx}`}
+                        draggableId={`chapter-${cIdx}`}
+                        index={cIdx}
+                      >
+                        {(provided, snapshot) => (
                           <div
-                            className={`syllabus-item-header ${
-                              expandedChapters[cIdx] ? "expanded" : ""
-                            }`}
-                            onClick={() => {
-                              const newExpanded = [...expandedChapters];
-                              newExpanded[cIdx] = !newExpanded[cIdx];
-                              setExpandedChapters(newExpanded);
-                            }}
-                          >
-                            <div className="chapter-title">
-                              <span className="chapter-number">
-                                Chương {cIdx + 1}:
-                              </span>
-                              <span>
-                                {chapter.title || "Chương chưa có tiêu đề"}
-                              </span>
-                            </div>
-                            <span className="arrow">▼</span>
-                          </div>
-                          <div
-                            className={`syllabus-item-content ${
-                              expandedChapters[cIdx] ? "expanded" : ""
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`chapter-card draggable-chapter ${
+                              snapshot.isDragging ? "dragging" : ""
                             }`}
                           >
-                            <div className="form-group">
-                              <label>
-                                Tên chương <span className="required">*</span>
-                              </label>
-                              <input
-                                placeholder="Nhập tên chương"
-                                value={chapter.title}
-                                onChange={(e) =>
-                                  handleChapterChange(
-                                    cIdx,
-                                    "title",
-                                    e.target.value
-                                  )
-                                }
-                                required
-                              />
-                            </div>
-
-                            <div className="form-group">
-                              <label>Mô tả chương</label>
-                              <textarea
-                                placeholder="Mô tả nội dung chương học..."
-                                value={chapter.description}
-                                onChange={(e) =>
-                                  handleChapterChange(
-                                    cIdx,
-                                    "description",
-                                    e.target.value
-                                  )
-                                }
-                                rows={3}
-                              />
-                            </div>
-
-                            {chapter.lessons.map((lesson, lIdx) => (
-                              <div key={lIdx} className="lesson-block">
-                                <div className="lesson-header">
-                                  <div className="lesson-number">
-                                    Bài {lIdx + 1}
-                                  </div>
-                                  <div className="lesson-actions">
-                                    <button
-                                      type="button"
-                                      className="add-lesson-btn"
-                                      onClick={() => addLesson(cIdx)}
-                                    >
-                                      + Thêm bài học
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="remove-btn"
-                                      onClick={() => removeLesson(cIdx, lIdx)}
-                                      disabled={chapter.lessons.length <= 1}
-                                    >
-                                      Xóa
-                                    </button>
-                                  </div>
+                            <div
+                              className={`chapter-header ${
+                                expandedChapters[cIdx] ? "expanded" : ""
+                              }`}
+                              onClick={() => {
+                                const newExpanded = [...expandedChapters];
+                                newExpanded[cIdx] = !newExpanded[cIdx];
+                                setExpandedChapters(newExpanded);
+                              }}
+                            >
+                              <div className="chapter-title-container" {...provided.dragHandleProps}>
+                                <div className="chapter-toggle">
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                  >
+                                    <path d="M3 12h18M3 6h18M3 18h18" />
+                                  </svg>
                                 </div>
-
-                                <div className="form-group">
-                                  <label>
-                                    Tên bài học{" "}
-                                    <span className="required">*</span>
-                                  </label>
-                                  <input
-                                    placeholder="Nhập tên bài học"
-                                    value={lesson.title}
-                                    onChange={(e) =>
-                                      handleLessonChange(
-                                        cIdx,
-                                        lIdx,
-                                        "title",
-                                        e.target.value
-                                      )
-                                    }
-                                    required
-                                  />
-                                </div>
-
-                                <div className="form-group">
-                                  <label>Nội dung</label>
-                                  <textarea
-                                    placeholder="Nội dung chi tiết bài học..."
-                                    value={lesson.content}
-                                    onChange={(e) =>
-                                      handleLessonChange(
-                                        cIdx,
-                                        lIdx,
-                                        "content",
-                                        e.target.value
-                                      )
-                                    }
-                                    rows={3}
-                                  />
-                                </div>
-
-                                <div className="form-group">
-                                  <label>Video URL</label>
-                                  <input
-                                    placeholder="Đường dẫn video (nếu có)"
-                                    value={lesson.videoUrl}
-                                    onChange={(e) =>
-                                      handleLessonChange(
-                                        cIdx,
-                                        lIdx,
-                                        "videoUrl",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
+                                <div className="chapter-number">{cIdx + 1}</div>
+                                <div className={`chapter-name ${!chapter.title ? "empty" : ""}`}>
+                                  {chapter.title || "Chương chưa có tiêu đề"}
                                 </div>
                               </div>
-                            ))}
+                              <div className="chapter-actions">
+                                <button
+                                  type="button"
+                                  className="chapter-toggle"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newExpanded = [...expandedChapters];
+                                    newExpanded[cIdx] = !newExpanded[cIdx];
+                                    setExpandedChapters(newExpanded);
+                                  }}
+                                >
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                  >
+                                    <path d="M6 9l6 6 6-6" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
 
-                            <div className="chapter-footer">
-                              <button
-                                type="button"
-                                className="remove-btn"
-                                onClick={() => removeChapter(cIdx)}
-                                disabled={course.details.chapters.length <= 1}
-                              >
-                                Xóa chương này
-                              </button>
+                            <div
+                              className={`chapter-content ${
+                                expandedChapters[cIdx] ? "expanded" : ""
+                              }`}
+                            >
+                              <div className="form-group">
+                                <label>
+                                  Tiêu Đề Chương <span className="required">*</span>
+                                </label>
+                                <input
+                                  placeholder="Nhập tiêu đề chương"
+                                  value={chapter.title}
+                                  onChange={(e) =>
+                                    handleChapterChange(cIdx, "title", e.target.value)
+                                  }
+                                  required
+                                />
+                              </div>
+
+                              <div className="form-group">
+                                <label>Mô Tả Chương</label>
+                                <textarea
+                                  placeholder="Mô tả nội dung chương này..."
+                                  value={chapter.description}
+                                  onChange={(e) =>
+                                    handleChapterChange(cIdx, "description", e.target.value)
+                                  }
+                                  rows={3}
+                                />
+                              </div>
+
+                              <div className="lesson-list">
+                                {chapter.lessons.map((lesson, lIdx) => (
+                                  <div key={lIdx} className="lesson-item">
+                                    <div className="lesson-header">
+                                      <div className="lesson-number">Bài {lIdx + 1}</div>
+                                      <div className="lesson-actions">
+                                        <button
+                                          type="button"
+                                          className="add-lesson-btn"
+                                          onClick={() => addLesson(cIdx)}
+                                        >
+                                          Thêm Bài Học
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="remove-btn"
+                                          onClick={() => removeLesson(cIdx, lIdx)}
+                                          disabled={chapter.lessons.length <= 1}
+                                        >
+                                          Xóa
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                      <label>
+                                        Tiêu Đề Bài Học <span className="required">*</span>
+                                      </label>
+                                      <input
+                                        placeholder="Nhập tiêu đề bài học"
+                                        value={lesson.title}
+                                        onChange={(e) =>
+                                          handleLessonChange(
+                                            cIdx,
+                                            lIdx,
+                                            "title",
+                                            e.target.value
+                                          )
+                                        }
+                                        required
+                                      />
+                                    </div>
+
+                                    <div className="form-group">
+                                      <label>Nội Dung</label>
+                                      <textarea
+                                        placeholder="Nội dung chi tiết bài học..."
+                                        value={lesson.content}
+                                        onChange={(e) =>
+                                          handleLessonChange(
+                                            cIdx,
+                                            lIdx,
+                                            "content",
+                                            e.target.value
+                                          )
+                                        }
+                                        rows={3}
+                                      />
+                                    </div>
+
+                                    <div className="form-group">
+                                      <label>URL Video</label>
+                                      <input
+                                        placeholder="URL video (nếu có)"
+                                        value={lesson.videoUrl}
+                                        onChange={(e) =>
+                                          handleLessonChange(
+                                            cIdx,
+                                            lIdx,
+                                            "videoUrl",
+                                            e.target.value
+                                          )
+                                        }
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div className="chapter-footer">
+                                <button
+                                  type="button"
+                                  className="remove-btn"
+                                  onClick={() => removeChapter(cIdx)}
+                                  disabled={course.details.chapters.length <= 1}
+                                >
+                                  Xóa Chương Này
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          )}
         </div>
 
-        {/* Phần Quiz */}
+        {/* Phần Câu Hỏi Trắc Nghiệm */}
         <div className="form-section quiz-section">
           <div className="section-header">
-            <h3>Quiz (Câu hỏi trắc nghiệm)</h3>
+            <h3>Câu Hỏi Trắc Nghiệm</h3>
             <button
               type="button"
               className="add-chapter-btn"
               onClick={addQuizQuestion}
             >
-              + Thêm câu hỏi
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Thêm Câu Hỏi
             </button>
           </div>
 
-          {(course.details?.quiz?.length || 0) === 0 ? (
+          {course.details.quiz.length === 0 ? (
             <div className="quiz-placeholder">
               <div className="quiz-icon">?</div>
               <p>Chưa có câu hỏi nào</p>
               <p className="note">
-                Nhấn nút "Thêm câu hỏi" để bắt đầu tạo quiz cho khóa học
+                Nhấn "Thêm Câu Hỏi" để tạo bài trắc nghiệm cho khóa học
               </p>
             </div>
           ) : (
@@ -817,9 +863,9 @@ const EditCourse = () => {
                     onClick={() => toggleQuizQuestion(qIdx)}
                   >
                     <div className="quiz-title">
-                      <span className="quiz-number">Câu hỏi {qIdx + 1}:</span>
+                      <span className="quiz-number">Câu {qIdx + 1}:</span>
                       <span className="quiz-preview">
-                        {question.question || "Câu hỏi chưa có nội dung"}
+                        {question.question || "Câu hỏi mới"}
                       </span>
                     </div>
                     <div className="quiz-actions">
@@ -831,7 +877,7 @@ const EditCourse = () => {
                           toggleQuizQuestion(qIdx);
                         }}
                       >
-                        {expandedQuiz[qIdx] ? "Ẩn" : "Mở"}
+                        {expandedQuiz[qIdx] ? "Thu gọn" : "Mở rộng"}
                       </button>
                       <button
                         type="button"
@@ -850,10 +896,10 @@ const EditCourse = () => {
                     <div className="quiz-content">
                       <div className="form-group">
                         <label>
-                          Nội dung câu hỏi <span className="required">*</span>
+                          Câu Hỏi <span className="required">*</span>
                         </label>
                         <textarea
-                          placeholder="Nhập nội dung câu hỏi..."
+                          placeholder="Nhập câu hỏi..."
                           value={question.question}
                           onChange={(e) =>
                             handleQuizQuestionChange(qIdx, e.target.value)
@@ -866,10 +912,10 @@ const EditCourse = () => {
 
                       <div className="form-group">
                         <label>
-                          Đáp án <span className="required">*</span>
+                          Lựa Chọn <span className="required">*</span>
                           <span className="note">
                             {" "}
-                            (Chọn đáp án đúng bằng cách nhấn vào nút radio)
+                            (Chọn đáp án đúng bằng nút radio)
                           </span>
                         </label>
 
@@ -892,7 +938,7 @@ const EditCourse = () => {
                                 </label>
                                 <input
                                   className="option-input"
-                                  placeholder={`Đáp án ${optIdx + 1}`}
+                                  placeholder={`Lựa chọn ${optIdx + 1}`}
                                   value={option}
                                   onChange={(e) =>
                                     handleQuizOptionChange(
@@ -923,7 +969,7 @@ const EditCourse = () => {
                             className="add-option-btn"
                             onClick={() => addQuizOption(qIdx)}
                           >
-                            + Thêm đáp án
+                            + Thêm Lựa Chọn
                           </button>
                         </div>
                       </div>
@@ -944,6 +990,7 @@ const EditCourse = () => {
           )}
         </div>
 
+        {/* Các Nút Hành Động */}
         <div className="form-actions">
           <button
             type="button"
@@ -951,12 +998,12 @@ const EditCourse = () => {
             onClick={() => navigate(-1)}
             disabled={loading}
           >
-            Hủy bỏ
+            Hủy
           </button>
           <button type="submit" className="submit-btn" disabled={loading}>
             {loading ? (
               <>
-                <span className="spinner"></span> Đang lưu...
+                <span className="spinner"></span> Đang xử lý...
               </>
             ) : (
               "Lưu Thay Đổi"
@@ -966,6 +1013,7 @@ const EditCourse = () => {
       </form>
 
       {error && <p className="error-message">{error}</p>}
+      {success && <p className="success-message">{success}</p>}
     </div>
   );
 };

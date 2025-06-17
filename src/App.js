@@ -20,6 +20,7 @@ import "./App.css";
 import MyCourses from "./pages/MyCourses"; 
 import InstructorDashboard from "./pages/InstructorDashboard";
 import EditCourse from "./pages/EditCourse";
+import AddQuizPage from "./components/AddQuizPage";
 
 function AppLayout({ user, onLogout, children }) {
   return (
@@ -70,6 +71,8 @@ function App() {
         <Route path="/editcourse/:id" element={<EditCourse />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/payment-status" element={<PaymentStatus />} />
+        <Route path="/courses/:id/add-quiz" element={<AddQuizPage />} />
+
         <Route
           path="/my-courses"
           element={
