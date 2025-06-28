@@ -75,8 +75,8 @@ const Register = () => {
   return (
     <div className="register-wrapper">
       <div className="register-container">
-        <button className="back-to-home-btn" onClick={() => navigate("/")}>
-          {/* ... */}
+        <button className="back-to-home-btn" onClick={() => navigate("/") }>
+          Trang chủ
         </button>
         <div className="register-header">
           {/* ... */}
@@ -139,30 +139,6 @@ const Register = () => {
             />
           </div>
 
-          {/* Thêm các trường mới */}
-          <div className="input-group">
-            <label htmlFor="profilePicture">Ảnh đại diện</label>
-            <input
-              id="profilePicture"
-              type="text"
-              name="profilePicture"
-              value={formData.profilePicture}
-              onChange={handleChange}
-              placeholder="Nhập URL ảnh đại diện"
-            />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="bio">Tiểu sử</label>
-            <textarea
-              id="bio"
-              name="bio"
-              value={formData.bio}
-              onChange={handleChange}
-              placeholder="Nhập tiểu sử của bạn"
-            />
-          </div>
-
           <div className="input-group">
             <label htmlFor="role">Bạn là</label>
             <select
@@ -185,17 +161,6 @@ const Register = () => {
         <div className="divider">
           <span>hoặc</span>
         </div>
-
-        <div className="social-register">
-          <button className="google-btn">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png"
-              alt="Google"
-            />
-            Đăng ký với Google
-          </button>
-        </div>
-
         <div className="login-link">
           Đã có tài khoản? <a href="/login">Đăng nhập ngay</a>
         </div>

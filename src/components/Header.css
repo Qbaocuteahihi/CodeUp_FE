@@ -1,3 +1,4 @@
+/* src/components/Header.css */
 .header {
   --primary-color: #401bb6;
   --secondary-color: #f6f6f6;
@@ -27,9 +28,10 @@
 }
 
 .logo h1 {
-  font-size: 1.8rem; /* Increased font size */
+  font-size: 1.8rem;
   margin: 0;
   font-weight: 700;
+  color: var(--primary-color);
 }
 
 /* Search Bar */
@@ -37,27 +39,43 @@
   flex: 1;
   max-width: 600px;
   margin: 0 2rem;
+  position: relative;
 }
 
 .search-wrapper form {
   width: 100%;
+  display: flex;
+  position: relative;
 }
 
 .search-wrapper input {
   width: 100%;
-  padding: 0.75rem 1.5rem; /* Increased padding for a more spacious feel */
-  border-radius: 1.5rem; /* Slightly more rounded corners */
+  padding: 0.75rem 1.5rem 0.75rem 3rem;
+  border-radius: 1.5rem;
   border: 1px solid var(--border-color);
   background: var(--secondary-color);
-  font-size: 1rem; /* Increased font size */
+  font-size: 1rem;
   transition: var(--hover-transition);
   outline: none;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Added shadow for depth */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .search-wrapper input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(64, 27, 182, 0.2);
+}
+
+.search-wrapper::before {
+  content: "\f002";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  z-index: 2;
+  font-size: 1rem;
 }
 
 /* User Actions */
@@ -77,7 +95,7 @@
 
 /* Base Button Styles */
 .buttons button {
-  padding: 0.6rem 1.5rem; /* Slightly larger padding */
+  padding: 0.6rem 1.5rem;
   border: none;
   border-radius: 0.5rem;
   font-weight: 600;
@@ -85,31 +103,40 @@
   transition: var(--hover-transition);
   font-size: 0.9rem;
   white-space: nowrap;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Added shadow for buttons */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .buttons button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Stronger shadow on hover */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 /* Specific Button Styles */
-.register {
+.login {
   background: #eee;
   color: var(--text-color);
 }
 
-.register:hover {
+.login:hover {
   background: #e0e0e0;
 }
 
-.login {
+.register {
   background: var(--primary-color);
   color: #fff;
 }
 
-.login:hover {
+.register:hover {
   background: #341499;
+}
+
+.profile-button {
+  background: #f0f0f0;
+  color: var(--text-color);
+}
+
+.profile-button:hover {
+  background: #e0e0e0;
 }
 
 .logout {
@@ -141,11 +168,15 @@
     max-width: 100%;
     margin: 0.5rem 0 0 0;
   }
+  
+  .search-wrapper::before {
+    left: 1.5rem;
+  }
 }
 
 @media (max-width: 480px) {
   .logo h1 {
-    font-size: 1.5rem; /* Adjusted for smaller screens */
+    font-size: 1.5rem;
   }
 
   .buttons button {
@@ -154,6 +185,15 @@
   }
 
   .user-greeting {
-    display: none; /* Hide user greeting on small screens */
+    display: none;
+  }
+
+  .search-wrapper input {
+    padding-left: 2.5rem;
+  }
+
+  .search-wrapper::before {
+    left: 1rem;
+    font-size: 0.9rem;
   }
 }

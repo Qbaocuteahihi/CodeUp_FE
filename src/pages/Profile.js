@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./Profile.css";
+import { useNavigate } from "react-router-dom";
 
 const Profile = ({ user, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -9,44 +10,57 @@ const Profile = ({ user, onUpdate }) => {
     email: "",
     bio: "",
     profilePicture: null,
-    previewImage: ""
+    previewImage: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isMounted = useRef(true);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    if (user) {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user && isMounted.current) {
       setFormData({
         username: user.username || "",
         email: user.email || "",
         bio: user.bio || "",
         profilePicture: null,
-        previewImage: user.profilePicture || ""
+        previewImage: user.profilePicture || "",
       });
     }
   }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         profilePicture: file,
-        previewImage: URL.createObjectURL(file)
-      });
+        previewImage: URL.createObjectURL(file),
+      }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Kiểm tra mounted trước mọi setState
+    if (!isMounted.current) return;
+
     setLoading(true);
     setError("");
 
@@ -54,33 +68,60 @@ const Profile = ({ user, onUpdate }) => {
       const formDataToSend = new FormData();
       formDataToSend.append("username", formData.username);
       formDataToSend.append("bio", formData.bio);
+
       if (formData.profilePicture) {
         formDataToSend.append("profilePicture", formData.profilePicture);
       }
 
       const response = await axios.put(
-        `/api/users/${user._id}`,
+        `/api/users/${user.id}`,
         formDataToSend,
         {
           headers: {
-            "Content-Type": "multipart/form-data"
-          }
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
 
-      onUpdate(response.data);
-      setIsEditing(false);
+      // Chỉ cập nhật nếu component còn mounted
+      if (isMounted.current) {
+        onUpdate?.(response.data);
+        setIsEditing(false);
+
+        // Sử dụng setTimeout để tách biệt render cycles
+        setTimeout(() => {
+          if (isMounted.current) {
+            navigate("/profile", { replace: true });
+          }
+        }, 0);
+      }
     } catch (err) {
-      setError("Cập nhật thất bại. Vui lòng thử lại.");
-      console.error(err);
+      if (isMounted.current) {
+        if (err.response?.data?.errors) {
+          const serverErrors = err.response.data.errors;
+          let errorMsg = "Cập nhật thất bại: ";
+
+          for (const field in serverErrors) {
+            errorMsg += `${serverErrors[field].message} `;
+          }
+
+          setError(errorMsg);
+        } else {
+          setError("Cập nhật thất bại. Vui lòng thử lại.");
+        }
+        console.error(err);
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        // Sử dụng setTimeout để tránh xung đột render
+        setTimeout(() => {
+          if (isMounted.current) {
+            setLoading(false);
+          }
+        }, 0);
+      }
     }
   };
-
-  if (!user) {
-    return <div className="profile-container"><div className="profile-message">Vui lòng đăng nhập để xem hồ sơ của bạn.</div></div>;
-  }
 
   return (
     <div className="profile-container">

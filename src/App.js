@@ -1,49 +1,81 @@
 // src/App.jsx
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React, { useState, useEffect, Suspense } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route
+} from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import CourseDetail from "./pages/CourseDetail";
-import AddCourse from "./pages/Addcourse";
-import AdminDashboard from "./pages/AdminDashboard";
-import Profile from "./pages/Profile";
-import PaymentStatus from "./pages/PaymentStatus";
-import UserDetail from "./pages/UserDetail";
 import Footer from "./components/Footer";
-import FavoritePage from "./pages/FavoritePage";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./App.css";
-import MyCourses from "./pages/MyCourses"; 
-import InstructorDashboard from "./pages/InstructorDashboard";
-import EditCourse from "./pages/EditCourse";
-import AddQuizPage from "./components/AddQuizPage";
 
-function AppLayout({ user, onLogout, children }) {
+// Sử dụng React.lazy cho các trang
+const Home = React.lazy(() => import("./pages/Home"));
+const Login = React.lazy(() => import("./pages/Login"));
+const Register = React.lazy(() => import("./pages/Register"));
+const CourseDetail = React.lazy(() => import("./pages/CourseDetail"));
+const AddCourse = React.lazy(() => import("./pages/Addcourse"));
+const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
+const Profile = React.lazy(() => import("./pages/Profile"));
+const PaymentStatus = React.lazy(() => import("./pages/PaymentStatus"));
+const UserDetail = React.lazy(() => import("./pages/UserDetail"));
+const FavoritePage = React.lazy(() => import("./pages/FavoritePage"));
+const MyCourses = React.lazy(() => import("./pages/MyCourses"));
+const InstructorDashboard = React.lazy(() => import("./pages/InstructorDashboard"));
+const EditCourse = React.lazy(() => import("./pages/EditCourse"));
+
+// Component layout chứa header, sidebar, footer
+const AppLayout = ({ user, onLogout, children }) => {
   return (
     <>
       <Header user={user} onLogout={onLogout} />
       <div className="main-layout">
         <Sidebar />
-        <div className="main-content">{children}</div>
+        <div className="main-content">
+          <Suspense fallback={<div className="loading-spinner" />}>
+            {children}
+          </Suspense>
+        </div>
       </div>
       <Footer />
     </>
   );
-}
+};
+
+// Không cần React.memo để tránh lỗi render
+const LayoutWrapper = ({ user, onLogout, children }) => {
+  return (
+    <AppLayout user={user} onLogout={onLogout}>
+      {children}
+    </AppLayout>
+  );
+};
 
 function App() {
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
+
     if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Lỗi khi phân tích dữ liệu người dùng:", e);
+        localStorage.removeItem("user");
+      }
     }
+
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 50);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleLogout = () => {
@@ -52,50 +84,130 @@ function App() {
     setUser(null);
   };
 
+  if (isLoading) {
+    return (
+      <div className="app-loading">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login setUser={setUser} />} />
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/login"
+          element={
+            <Suspense fallback={<div className="loading-spinner" />}>
+              <Login setUser={setUser} />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <Suspense fallback={<div className="loading-spinner" />}>
+              <Register />
+            </Suspense>
+          }
+        />
+
         <Route
           path="/profile"
           element={
-            <AppLayout user={user} onLogout={handleLogout}>
+            <LayoutWrapper user={user} onLogout={handleLogout}>
               <Profile user={user} />
-            </AppLayout>
+            </LayoutWrapper>
           }
         />
-        <Route path="/admin/users/:id" element={<UserDetail />} />
-        <Route path="/courses/:id" element={<CourseDetail user={user} />} />
-        <Route path="/addcourse" element={<AddCourse />} />
-        <Route path="/editcourse/:id" element={<EditCourse />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/payment-status" element={<PaymentStatus />} />
-        <Route path="/courses/:id/add-quiz" element={<AddQuizPage />} />
+
+        <Route
+          path="/admin/users/:id"
+          element={
+            <LayoutWrapper user={user} onLogout={handleLogout}>
+              <UserDetail />
+            </LayoutWrapper>
+          }
+        />
+
+        <Route
+          path="/courses/:id"
+          element={
+            <LayoutWrapper user={user} onLogout={handleLogout}>
+              <CourseDetail user={user} />
+            </LayoutWrapper>
+          }
+        />
+
+        <Route
+          path="/addcourse"
+          element={
+            <LayoutWrapper user={user} onLogout={handleLogout}>
+              <AddCourse />
+            </LayoutWrapper>
+          }
+        />
+
+        <Route
+          path="/editcourse/:id"
+          element={
+            <LayoutWrapper user={user} onLogout={handleLogout}>
+              <EditCourse />
+            </LayoutWrapper>
+          }
+        />
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            <LayoutWrapper user={user} onLogout={handleLogout}>
+              <AdminDashboard />
+            </LayoutWrapper>
+          }
+        />
+
+        <Route
+          path="/payment-status"
+          element={
+            <LayoutWrapper user={user} onLogout={handleLogout}>
+              <PaymentStatus />
+            </LayoutWrapper>
+          }
+        />
 
         <Route
           path="/my-courses"
           element={
-            <AppLayout user={user} onLogout={handleLogout}>
+            <LayoutWrapper user={user} onLogout={handleLogout}>
               <MyCourses />
-            </AppLayout>
+            </LayoutWrapper>
           }
         />
+
         <Route
           path="/favorites"
           element={
-            <AppLayout user={user} onLogout={handleLogout}>
+            <LayoutWrapper user={user} onLogout={handleLogout}>
               <FavoritePage />
-            </AppLayout>
+            </LayoutWrapper>
           }
         />
-        <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+
+        <Route
+          path="/instructor/dashboard"
+          element={
+            <LayoutWrapper user={user} onLogout={handleLogout}>
+              <InstructorDashboard />
+            </LayoutWrapper>
+          }
+        />
+
         <Route
           path="*"
           element={
-            <AppLayout user={user} onLogout={handleLogout}>
+            <LayoutWrapper user={user} onLogout={handleLogout}>
               <Home />
-            </AppLayout>
+            </LayoutWrapper>
           }
         />
       </Routes>
